@@ -1,5 +1,4 @@
-package com.apiProductos.productos.service;
-
+package com.apiProductos.productos.services;
 import com.apiProductos.productos.model.Categoria;
 import com.apiProductos.productos.repository.CategoriaRepository;
 import org.springframework.stereotype.Service;
@@ -27,6 +26,6 @@ public class CategoriaService {
     }
 
     public Categoria buscarPorNombre(String nombre) {
-        return repo.findByNombre(nombre);
+        return repo.findByNombre(nombre).orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
     }
 }
