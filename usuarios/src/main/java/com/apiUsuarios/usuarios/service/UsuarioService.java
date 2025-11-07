@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -20,8 +20,6 @@ public class UsuarioService {
     @Autowired
     private UsuarioRepository usuarioRepository;
     
-    @Autowired
-    private MicroservicioService microservicioService;
 
     public Usuario crearUsuario(UsuarioRequest request) {
         try {
@@ -37,6 +35,7 @@ public class UsuarioService {
             usuario.setDv(request.getDv());
             usuario.setNombre(request.getNombre());
             usuario.setEmail(request.getEmail());
+            usuario.setDireccion(request.getDireccion());
             usuario.setContrasena(request.getContrasena());
             
             // Guardar usuario PRIMERO
@@ -127,6 +126,7 @@ public class UsuarioService {
                 usuario.setDv(request.getDv());
                 usuario.setNombre(request.getNombre());
                 usuario.setEmail(request.getEmail());
+                usuario.setDireccion(request.getDireccion());
                 usuario.setContrasena(request.getContrasena());
                 
                 Usuario usuarioActualizado = usuarioRepository.save(usuario);

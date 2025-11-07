@@ -17,7 +17,8 @@ public class UsuarioRequest {
     private String dv;
     private String nombre;
     private String email;
-    private String contrasena;
     private String direccion;
+    private String contrasena;
+
     
 }
