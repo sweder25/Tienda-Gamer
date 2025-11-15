@@ -1,0 +1,144 @@
+
+Tienda-Gamer
+============
+
+Resumen
+-------
+Este repositorio contiene varios micro-módulos (cada uno con su propio pom/mvnw) para una pequeña aplicación de gestión de productos y categorías llamada "Tienda-Gamer". El código implementa entidades JPA básicas, repositorios Spring Data JPA, servicios y controladores REST para operaciones CRUD y búsquedas simples.
+
+Estructura principal
+--------------------
+Cada módulo está en su propia carpeta de primer nivel. Entre los módulos más relevantes en este repositorio están:
+
+- `categoria/` — Módulo que contiene la entidad `Categoria`, su repositorio, servicio y controlador.
+- `productos/` — Módulo que contiene la entidad `Productos`, su repositorio, servicio y controlador.
+- `ingreso/`, `inventario/`, `registro/`, `tienda/`, `usuarios/`, `ventas/`, `boleta/` — Otros módulos/plantillas que forman parte del monorepo; revisar sus subcarpetas para detalles.
+
+Detalles técnicos (módulos analizados)
+-----------------------------------
+
+1) Módulo `categoria`
+
+- Entidad: `com.apiProductos.productos.model.Categoria`
+	- Campos: `Long id`, `String nombre` (unique, not null)
+
+- Repositorio: `com.apiProductos.productos.repository.CategoriaRepository`
+	- Método notable: `Optional<Categoria> findByNombre(String nombre)`
+		- Nota: fue actualizado para devolver `Optional` explícitamente (previo problema de null-safety).
+
+- Servicio: `com.apiProductos.productos.services.CategoriaService`
+	- Métodos públicos:
+		- `List<Categoria> listarCategorias()` — delega a `repo.findAll()`
+		- `Categoria crearCategoria(Categoria categoria)` — delega a `repo.save(categoria)`
+		- `Categoria buscarPorId(Long id)` — usa `repo.findById(id).orElseThrow(...)` y lanza `RuntimeException("Categoría no encontrada")` si no existe
+		- `Categoria buscarPorNombre(String nombre)` — usa `repo.findByNombre(nombre).orElseThrow(...)`
+
+2) Módulo `productos`
+
+- Entidad: `com.apiProductos.productos.model.Productos`
+	- Campos: `Long id`, `String nombreProducto` (not null)
+	- Actualmente NO contiene una relación `Categoria` (campo ManyToOne) en la versión analizada.
+
+- Repositorio: `com.apiProductos.productos.repository.ProductoRepository`
+	- Método notable: `List<Productos> findByCategoriaNombre(String nombreCategoria)` — buscador por el nombre de la categoría (espera que exista la relación en la entidad `Productos` con nombre `categoria.nombre` en la ruta de propiedad JPA).
+
+- Servicio: `com.apiProductos.productos.services.ProductoServices`
+	- Métodos públicos (actualizados para alinear con el controlador):
+		- `List<Productos> listarProductos()` — `productoRepo.findAll()`
+		- `Productos crearProducto(Productos producto)` — guarda el producto
+		- `Productos crearProducto(Productos producto, Long categoriaId)` — sobrecarga añadida para que compile el controlador; actualmente guarda el producto "tal cual" y contiene un TODO para establecer la asociación con `Categoria` cuando se agregue la dependencia/campo.
+		- `List<Productos> buscarPorCategoria(String nombreCategoria)` — delega a `productoRepo.findByCategoriaNombre(nombreCategoria)`
+
+- Controlador: `com.apiProductos.productos.controller.ProductoController`
+	- Endpoints expuestos (base `/api/v1/productos`):
+		- `GET /api/v1/productos` — listar todos los productos
+		- `POST /api/v1/productos/categoria/{categoriaId}` — crear producto (el body contiene `Productos` y se pasa `categoriaId` en la ruta). Actualmente el servicio guarda el producto sin asociarlo; ver TODO.
+		- `GET /api/v1/productos/categoria/{nombreCategoria}` — listar productos filtrando por nombre de categoría (usa `buscarPorCategoria` en servicio)
+
+Notas de coherencia y TODOs importantes
+-------------------------------------
+
+- Null-safety: Para resolver avisos de null-safety en `CategoriaService`, el repositorio `findByNombre` fue cambiado para devolver `Optional<Categoria>` y el servicio utiliza `orElseThrow(...)`. Esto evita conversiones inseguras a `@NonNull`.
+
+- Asociación Productos <-> Categoria:
+	- La entidad `Productos` no contiene actualmente un campo `Categoria` (ManyToOne). Sin esa relación, `findByCategoriaNombre(...)` puede compilar pero no funcionará correctamente en tiempo de ejecución si la entidad no expone la propiedad `categoria.nombre`.
+	- Para implementar la asociación correctamente existen dos opciones:
+		1. Añadir dependencia del módulo `categoria` en el `pom.xml` de `productos`, agregar campo `@ManyToOne private Categoria categoria;` en `Productos`, y en `crearProducto(..., categoriaId)` buscar la categoría por id y asignarla antes de guardar.
+		2. Extraer entidades compartidas a un módulo `common` y que ambos módulos dependan de él.
+
+- Manejo de excepciones: Actualmente se usa `RuntimeException("Categoría no encontrada")`. Recomiendo crear una excepción específica tipo `NotFoundException` y un `@ControllerAdvice` que la mapee a HTTP 404.
+
+Cómo compilar y ejecutar (Windows PowerShell)
+-------------------------------------------
+
+Cada módulo tiene su propio wrapper Maven (`mvnw.cmd`) en su carpeta. Para compilar un módulo individual:
+
+```powershell
+cd C:\Users\makzi\Desktop\Tienda-Gamer\categoria
+.\mvnw.cmd -DskipTests package
+
+cd C:\Users\makzi\Desktop\Tienda-Gamer\productos
+.\mvnw.cmd -DskipTests package
+```
+
+Para ejecutar un módulo Spring Boot directamente:
+
+```powershell
+cd C:\Users\makzi\Desktop\Tienda-Gamer\productos
+.\mvnw.cmd spring-boot:run
+```
+
+Ejemplos de uso (JSON y curl)
+-----------------------------
+
+1) Crear una categoría (ejemplo):
+
+Request JSON (POST body):
+
+```json
+{
+	"nombre": "Consolas"
+}
+```
+
+Ejemplo curl (PowerShell con `Invoke-RestMethod` o usar curl):
+
+```powershell
+curl -X POST "http://localhost:8080/api/v1/categorias" -H "Content-Type: application/json" -d '{"nombre":"Consolas"}'
+```
+
+2) Crear un producto (ejemplo):
+
+Request JSON (body):
+
+```json
+{
+	"nombreProducto": "Gamepad Inalámbrico"
+}
+```
+
+Ejemplo curl que llama al endpoint con categoría por id:
+
+```powershell
+curl -X POST "http://localhost:8080/api/v1/productos/categoria/1" -H "Content-Type: application/json" -d '{"nombreProducto":"Gamepad Inalámbrico"}'
+```
+
+3) Listar productos por nombre de categoría:
+
+```powershell
+curl "http://localhost:8080/api/v1/productos/categoria/Consolas"
+```
+
+Recomendaciones / próximos pasos
+--------------------------------
+
+1. Implementar la relación JPA entre `Productos` y `Categoria` (ManyToOne) y actualizar `crearProducto(..., categoriaId)` para buscar y asignar la categoría.
+2. Crear excepción `NotFoundException` y `@ControllerAdvice` para mapear 404/400 de forma consistente.
+3. Añadir validaciones (`@Valid`, DTOs) para los cuerpos de petición y respuestas.
+4. Añadir pruebas unitarias/integración (por ejemplo, Spring Boot Test) para servicios y controladores.
+5. Revisar el uso de Lombok (ya usado) y anotaciones de null-safety si se quiere reforzar en tiempo de compilación.
+
+Contacto
+--------
+Si quieres que implemente uno de los siguientes pasos (ej. wiring Products-Categories, excepción personalizada, o ejecuto las compilaciones aquí y corrijo errores), dime cuál y lo hago.
+
