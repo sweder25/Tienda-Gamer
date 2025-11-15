@@ -23,5 +23,12 @@ public class VentaService {
         ventaRepository.save(venta);
     }
     
+    public void eliminarVenta(Long id) {
+        ventaRepository.deleteById(id);
+    }
+
+    public com.apiVentas.ventas.model.Venta obtenerVenta(Long id) {
+        return ventaRepository.findById(id).orElse(null);
+    }
 
 }
