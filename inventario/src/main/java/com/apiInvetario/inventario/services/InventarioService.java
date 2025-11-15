@@ -1,8 +1,8 @@
 
 package com.apiInvetario.inventario.services;
 
-import com.apiInventario.inventario.model.Inventario;
-import com.apiInventario.inventario.repository.InventarioRepository;
+import com.apiInvetario.inventario.model.Inventario;
+import com.apiInvetario.inventario.repository.InventarioRepository;
 import org.springframework.stereotype.Service;
 
 @Service

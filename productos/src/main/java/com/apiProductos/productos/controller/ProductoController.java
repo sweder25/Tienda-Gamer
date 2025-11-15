@@ -1,7 +1,7 @@
 package com.apiProductos.productos.controller;
 
-import com.apiProductos.productos.model.Producto;
-import com.apiProductos.productos.service.ProductoService;
+import com.apiProductos.productos.model.Productos;
+import com.apiProductos.productos.services.ProductoServices;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -9,24 +9,27 @@ import java.util.List;
 @RequestMapping("/api/v1/productos")
 public class ProductoController {
 
-    private final ProductoService service;
+    private final ProductoServices service;
 
-    public ProductoController(ProductoService service) {
+    public ProductoController(ProductoServices service) {
         this.service = service;
     }
 
     @GetMapping
-    public List<Producto> listarProductos() {
+    public List<Productos> listarProductos() {
         return service.listarProductos();
     }
 
-    @PostMapping("/categoria/{categoriaId}")
-    public Producto crearProducto(@RequestBody Producto producto, @PathVariable Long categoriaId) {
-        return service.crearProducto(producto, categoriaId);
+    @PostMapping
+    public Productos crearProducto(@RequestBody Productos producto) {
+        return service.crearProducto(producto);
+    }   
+
+
+    @DeleteMapping("/{id}")
+    public void eliminarProducto(@PathVariable Long id) {
+        service.eliminarProducto(id);
     }
 
-    @GetMapping("/categoria/{nombreCategoria}")
-    public List<Producto> listarPorCategoria(@PathVariable String nombreCategoria) {
-        return service.buscarPorCategoria(nombreCategoria);
-    }
+    
 }
