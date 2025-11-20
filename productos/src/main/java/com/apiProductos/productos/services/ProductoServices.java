@@ -23,17 +23,16 @@ public class ProductoServices {
         return productoRepo.save(producto);
     }
 
-    // Overloaded method used by the controller when a categoriaId is provided.
-    // Currently this implementation saves the product as-is. To associate the
-    // Productos with a Categoria entity you'll need to add a dependency on the
-    // `categoria` module and set producto.setCategoria(...) before saving.
-    @SuppressWarnings("null")
-    public Productos crearProducto(Productos producto, Long categoriaId) {
-        // TODO: wire Categoria association when cross-module dependency is available
-        return productoRepo.save(producto);
+    public void eliminarProducto(Long id) {
+        productoRepo.deleteById(id);
     }
 
-    public List<Productos> buscarPorCategoria(String nombreCategoria) {
-        return productoRepo.findByCategoriaNombre(nombreCategoria);
+    public void actualizarProducto(Long id, Productos productoActualizado) {
+        Productos productoExistente = productoRepo.findById(id).orElse(null);
+        if (productoExistente != null) {
+            productoExistente.setNombreProducto(productoActualizado.getNombreProducto());
+            productoExistente.setDescripcion(productoActualizado.getDescripcion());
+            productoRepo.save(productoExistente);
+        }
     }
 }

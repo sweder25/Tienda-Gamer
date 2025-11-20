@@ -18,9 +18,6 @@ public class Productos{
     @Column(name="nombre_producto", nullable = false)
     private String nombreProducto;
 
-
-    //Con ManyToOne relacionamos distintos servicios.
-    @ManyToOne
-    @JoinColumn(name = "categoria_id", nullable = false)
-    private Categoria categoria;
+    @Column(name="descripcion", nullable = false)
+    private String descripcion;
 }

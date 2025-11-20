@@ -1,7 +1,7 @@
 package com.apiProductos.productos.controller;
 
 import com.apiProductos.productos.model.Categoria;
-import com.apiProductos.productos.service.CategoriaService;
+import com.apiProductos.productos.services.CategoriaService;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -23,5 +23,10 @@ public class CategoriaController {
     @PostMapping
     public Categoria crearCategoria(@RequestBody Categoria categoria) {
         return service.crearCategoria(categoria);
+    }
+
+    @GetMapping("/{id}")
+    public Categoria buscarPorId(@PathVariable Long id) {
+        return service.buscarPorId(id);
     }
 }
