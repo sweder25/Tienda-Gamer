@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequestMapping("/ventas")
+@RequestMapping("/api/ventas")
 
 
 public class VentasController {

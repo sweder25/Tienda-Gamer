@@ -5,7 +5,7 @@ import com.apiInvetario.inventario.services.InventarioService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/inventario")
+@RequestMapping("/api/inventario")
 public class InventarioController {
 
     private final InventarioService service;
@@ -27,5 +27,10 @@ public class InventarioController {
     @GetMapping("/stock/{productoId}")
     public Integer consultarStock(@PathVariable Long productoId) {
         return service.consultarStock(productoId);
+    }
+
+    @DeleteMapping("/eliminar/{productoId}")
+    public void eliminarInventario(@PathVariable Long productoId) {
+        service.eliminarInventario(productoId);
     }
 }

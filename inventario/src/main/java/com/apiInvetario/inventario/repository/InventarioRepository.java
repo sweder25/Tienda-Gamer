@@ -1,7 +1,7 @@
-package com.apiInventario.inventario.repository;
+package com.apiInvetario.inventario.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import com.apiInventario.inventario.model.Inventario;
+import com.apiInvetario.inventario.model.Inventario;
 import java.util.Optional;
 
 public interface InventarioRepository extends JpaRepository<Inventario, Long> {

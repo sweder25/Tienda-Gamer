@@ -1,9 +1,10 @@
 package com.apiProductos.productos.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import com.apiProductos.productos.model.Producto;
-import java.util.List;
+import com.apiProductos.productos.model.Productos;
+import org.springframework.data.jpa.repository.JpaRepository;   
+import org.springframework.stereotype.Repository;
 
-public interface ProductoRepository extends JpaRepository<Producto, Long> {
-    List<Producto> findByCategoriaNombre(String nombreCategoria);
+@Repository
+public interface ProductoRepository extends JpaRepository<Productos, Long> {
+    
 }

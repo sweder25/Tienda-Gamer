@@ -1,8 +1,8 @@
 
 package com.apiInvetario.inventario.services;
 
-import com.apiInventario.inventario.model.Inventario;
-import com.apiInventario.inventario.repository.InventarioRepository;
+import com.apiInvetario.inventario.model.*;
+import com.apiInvetario.inventario.repository.InventarioRepository;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -32,5 +32,11 @@ public class InventarioService {
         return repo.findByProductoId(productoId)
                 .map(Inventario::getCantidadDisponible)
                 .orElse(0);
+    }
+
+    public void eliminarInventario(Long productoId) {
+        Inventario inventario = repo.findByProductoId(productoId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado en inventario"));
+        repo.delete(inventario);
     }
 }

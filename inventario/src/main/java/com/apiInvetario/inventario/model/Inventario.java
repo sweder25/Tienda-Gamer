@@ -1,4 +1,4 @@
-package com.apiInventario.inventario.model;
+package com.apiInvetario.inventario.model;
 
 import jakarta.persistence.*;
 import lombok.Data;

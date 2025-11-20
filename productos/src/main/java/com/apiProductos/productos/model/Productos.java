@@ -18,9 +18,15 @@ public class Productos{
     @Column(name="nombre_producto", nullable = false)
     private String nombreProducto;
 
+    @Column(name="descripcion", nullable = false)
+    private String descripcion;
 
-    //Con ManyToOne relacionamos distintos servicios.
-    @ManyToOne
-    @JoinColumn(name = "categoria_id", nullable = false)
-    private Categoria categoria;
+    @Column (name="precio", nullable = false)
+    private Double precio;
+
+    @Column (name="cantidad", nullable = false)
+    private Integer cantidad;
+
+    @Column (name="digital", nullable = false)
+    private Boolean digital;
 }
