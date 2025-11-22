@@ -22,14 +22,14 @@ Este proyecto implementa una tienda gamer utilizando arquitectura de microservic
 
 ## Flujo del Proyecto
 
-### 1. **Registro de Usuario**
+### 1. **Creacion de Usuario**
 ```
-Cliente → API Gateway (8085) → Servicio REGISTRO (8084)
+Cliente → API Gateway (8085) → Servicio Usuarios (8086)
 ```
-- El usuario se registra en el sistema
-- Se valida la información del usuario
-- Se guarda en la base de datos del servicio REGISTRO
-- **Endpoint:** `POST /api/registro/`
+- Se crea Usuario
+- Se guarda en la base de datos del servicio Usuario
+- Se crea automaticamente el registro con la fecha cuando se creo el usuario en el servicio Registro.
+- **Endpoint:** `POST /api/usuarios/`
 
 ### 2. **Inicio de Sesión**
 ```
