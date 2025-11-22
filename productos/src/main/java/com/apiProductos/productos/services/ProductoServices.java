@@ -39,4 +39,8 @@ public class ProductoServices {
         repository.save(productoExistente);
     }
 
+    public Productos obtenerProducto(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + id));   
+}
 }

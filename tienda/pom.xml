@@ -8,17 +8,20 @@
         <version>3.5.7</version>
         <relativePath/>
     </parent>
+
     <groupId>com.apiTienda</groupId>
     <artifactId>tienda</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>tienda</name>
     <description>Demo project for Spring Boot</description>
+
     <properties>
         <java.version>21</java.version>
         <spring-cloud.version>2025.0.0</spring-cloud.version>
     </properties>
+
     <dependencies>
-        <!-- REMOVER spring-boot-starter-web y usar webflux -->
+        <!-- Spring WebFlux (Gateway necesita WebFlux) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
@@ -30,28 +33,46 @@
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
 
-        <!-- Service discovery -->
+        <!-- Actuator (útil para health/metrics y DevTools / Live hover) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- SpringDoc para WebFlux (UI + swagger) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+
+        <!-- Anotaciones Swagger (si necesitas usar @Operation explícito) -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>2.2.10</version>
+        </dependency>
+
+        <!-- Eureka client (opcional según tu configuración) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
 
-        <!-- REMOVER JPA si solo es gateway -->
-        <!-- <dependency>
+                <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
-        </dependency> -->
 
         <!-- Tests -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <!-- evitar conflicto con WebFlux reactor-test ya incluido -->
+            </exclusions>
         </dependency>
     </dependencies>
 
@@ -77,6 +98,7 @@
                     <release>${java.version}</release>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
