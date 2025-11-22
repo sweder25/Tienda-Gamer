@@ -1,4 +1,4 @@
-package com.apiIngreso.ingreso.model;
+package com.apiBoleta.boleta.model.DTO;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,10 +7,9 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Usuario {
+public class UsuarioDTO {
     private Long rut;
     private String nombre;
     private String email;
-    private String password;
     private String rol;
 }

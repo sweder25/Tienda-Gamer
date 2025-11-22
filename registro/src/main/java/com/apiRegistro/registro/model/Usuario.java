@@ -13,22 +13,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Usuario {
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private Long rut;
-    
-    @Column(name = "dv")
-    private String dv;
-    
-    @Column(name = "nombre")
+
+    @Column(name = "nombre", nullable = false) 
     private String nombre;
     
-    @Column(name = "email")
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
-
-    @Column(name = "direccion")
-    private String direccion;
     
-    @Column(name = "contrasena")
+    @Column(name = "contrasena", nullable = false)
     private String contrasena;
     
 }

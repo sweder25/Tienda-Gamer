@@ -1,4 +1,4 @@
-package com.apiIngreso.ingreso.dto;
+package com.apiBoleta.boleta.model.DTO;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginRequest {
-    private Long rut;
-    private String password;
+public class BoletaRequest {
+    private Long ventaId;
 }

@@ -1,7 +1,6 @@
 package com.apiUsuarios.usuarios.controller;
 
 import com.apiUsuarios.usuarios.model.Usuario;
-import com.apiUsuarios.usuarios.model.UsuarioRequest;
 import com.apiUsuarios.usuarios.service.UsuarioService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,15 +26,13 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
-
-    
     // === OBTENER TODOS LOS USUARIOS ===
     @Operation(summary = "Obtener todos los usuarios")
     @Description("Este endpoint permite obtener una lista de todos los usuarios registrados en el sistema.")
     @GetMapping
-    public ResponseEntity<List<Usuario>> obtenerTodos() {
+    public ResponseEntity<List<Usuario>> listarUsuarios() {
         try {
-            List<Usuario> usuarios = usuarioService.obtenerTodos();
+            List<Usuario> usuarios = usuarioService.listarUsuarios();
             return ResponseEntity.ok(usuarios);
         } catch (Exception e) {
             logger.error("Error al obtener todos los usuarios: {}", e.getMessage());
@@ -47,17 +44,14 @@ public class UsuarioController {
     @Operation(summary = "Obtener usuario por RUT")
     @Description("Este endpoint permite obtener un usuario específico utilizando su RUT.")
     @GetMapping("/{rut}")
-    public ResponseEntity<Usuario> obtenerPorRut(@PathVariable String rut) {
+    public ResponseEntity<Usuario> obtenerUsuario(@PathVariable Long rut) {
         try {
-            Usuario usuario = usuarioService.obtenerPorRut(rut);
+            Usuario usuario = usuarioService.obtenerUsuario(rut);
             if (usuario != null) {
                 return ResponseEntity.ok(usuario);
             } else {
                 return ResponseEntity.notFound().build();
             }
-        } catch (RuntimeException e) {
-            logger.error("Error de validación al obtener usuario {}: {}", rut, e.getMessage());
-            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             logger.error("Error interno al obtener usuario {}: {}", rut, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -66,70 +60,43 @@ public class UsuarioController {
 
     // === CREAR USUARIO ===
     @Operation(summary = "Crear un nuevo usuario")
-    @Description("Este endpoint permite crear un nuevo usuario en el sistema. Si el RUT ya existe, se retornará un error 409.")
+    @Description("Este endpoint permite crear un nuevo usuario en el sistema y registrarlo automáticamente.")
     @PostMapping
-    public ResponseEntity<Usuario> crearUsuario(@RequestBody UsuarioRequest usuarioRequest) {
+    public ResponseEntity<Usuario> crearUsuario(@RequestBody Usuario usuario) {
         try {
             // Verificar si el RUT ya existe
-            Usuario usuarioExistente = usuarioService.obtenerPorRut(usuarioRequest.getRut().toString());
+            Usuario usuarioExistente = usuarioService.obtenerUsuario(usuario.getRut());
             if (usuarioExistente != null) {
-                logger.warn("Intento de crear usuario con RUT duplicado: {}", usuarioRequest.getRut());
+                logger.warn("Intento de crear usuario con RUT duplicado: {}", usuario.getRut());
                 return ResponseEntity.status(HttpStatus.CONFLICT).build();
             }
             
-            Usuario usuarioCreado = usuarioService.crearUsuario(usuarioRequest);
+            Usuario usuarioCreado = usuarioService.crearUsuario(usuario);
             return ResponseEntity.status(HttpStatus.CREATED).body(usuarioCreado);
             
-        } catch (RuntimeException e) {
-            logger.error("Error de validación al crear usuario: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         } catch (Exception e) {
             logger.error("Error interno al crear usuario: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // === ACTUALIZAR USUARIO ===
-    @Operation(summary = "Actualizar un usuario existente")
-    @Description("Este endpoint permite actualizar la información de un usuario existente utilizando su RUT. Si el usuario no existe, se retornará un error 404.")
-    @PutMapping("/{rut}")
-    public ResponseEntity<Usuario> actualizarUsuario(@PathVariable String rut, @RequestBody UsuarioRequest usuarioRequest) {
-        try {
-            Usuario usuarioActualizado = usuarioService.actualizarUsuario(rut, usuarioRequest);
-            if (usuarioActualizado != null) {
-                return ResponseEntity.ok(usuarioActualizado);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (RuntimeException e) {
-            logger.error("Error de validación al actualizar usuario {}: {}", rut, e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        } catch (Exception e) {
-            logger.error("Error interno al actualizar usuario {}: {}", rut, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
     // === ELIMINAR USUARIO ===
     @Operation(summary = "Eliminar un usuario existente")
-    @Description("Este endpoint permite eliminar un usuario del sistema utilizando su RUT. Si el usuario no existe, se retornará un error 404.")
+    @Description("Este endpoint permite eliminar un usuario del sistema utilizando su RUT.")
     @DeleteMapping("/{rut}")
-    public ResponseEntity<Void> eliminarUsuario(@PathVariable String rut) {
+    public ResponseEntity<Void> eliminarUsuario(@PathVariable Long rut) {
         try {
-            boolean eliminado = usuarioService.eliminarUsuario(rut);
-            if (eliminado) {
-                return ResponseEntity.noContent().build();
-            } else {
+            Usuario usuario = usuarioService.obtenerUsuario(rut);
+            if (usuario == null) {
                 return ResponseEntity.notFound().build();
             }
-        } catch (RuntimeException e) {
-            logger.error("Error de validación al eliminar usuario {}: {}", rut, e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            
+            usuarioService.eliminarUsuario(rut);
+            return ResponseEntity.noContent().build();
+            
         } catch (Exception e) {
             logger.error("Error interno al eliminar usuario {}: {}", rut, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-
 }

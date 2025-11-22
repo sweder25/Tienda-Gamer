@@ -1,4 +1,5 @@
-package com.apiTienda.tienda.configswagger;
+package com.apiBoleta.boleta.config;
+
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import org.springframework.context.annotation.Bean;
@@ -11,8 +12,8 @@ public class SwaggerConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("API - Sistema Tienda")
-                        .version("1.0.0")
-                        .description("Api de Sistema para la Tienda Gamer"));
+                        .title("API Boleta - Tienda Gamer")
+                        .version("1.0")
+                        .description("API para gestionar boletas del sistema"));
     }
 }

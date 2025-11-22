@@ -14,11 +14,10 @@ import lombok.Data;
 public class UsuarioRequest {
 
     private Long rut;
-    private String dv;
     private String nombre;
     private String email;
-    private String direccion;
     private String contrasena;
+    private boolean rol;
 
     
 }

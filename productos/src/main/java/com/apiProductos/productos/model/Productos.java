@@ -1,32 +1,35 @@
 package com.apiProductos.productos.model;
+
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
+import java.math.BigDecimal;
 
 @Entity
-@Table(name="Productos")
+@Table(name = "productos")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Productos{
+public class Productos {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="nombre_producto", nullable = false)
-    private String nombreProducto;
+    @Column(nullable = false)
+    private String nombre;
 
-    @Column(name="descripcion", nullable = false)
+    @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column (name="precio", nullable = false)
-    private Double precio;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal precio;
 
-    @Column (name="cantidad", nullable = false)
-    private Integer cantidad;
+    @Column(nullable = false)
+    private String categoria;
 
-    @Column (name="digital", nullable = false)
-    private Boolean digital;
+    @Column
+    private String imagen;
 }

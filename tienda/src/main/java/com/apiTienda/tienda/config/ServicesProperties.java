@@ -6,15 +6,11 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "services")
 public class ServicesProperties {
-    private String inventarioUrl;
     private String productosUrl;
     private String registrosUrl;
     private String usuariosUrl;
     private String ventasUrl;
-
-
-    public String getInventarioUrl() { return inventarioUrl; }
-    public void setInventarioUrl(String inventarioUrl) { this.inventarioUrl = inventarioUrl; }
+     private String boletaUrl;
 
     public String getProductosUrl() { return productosUrl; }
     public void setProductosUrl(String productosUrl) { this.productosUrl = productosUrl; }
@@ -27,6 +23,9 @@ public class ServicesProperties {
 
     public String getVentasUrl() { return ventasUrl; }
     public void setVentasUrl(String ventasUrl) { this.ventasUrl = ventasUrl; }
+
+    public String getBoletaUrl() { return boletaUrl; }
+    public void setBoletaUrl(String boletaUrl) { this.boletaUrl = boletaUrl; }
 
 
 
