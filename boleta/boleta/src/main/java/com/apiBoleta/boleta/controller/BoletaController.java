@@ -1,107 +1,79 @@
 package com.apiBoleta.boleta.controller;
 
+import com.apiBoleta.boleta.model.Boleta;
 import com.apiBoleta.boleta.model.DTO.BoletaRequest;
 import com.apiBoleta.boleta.model.DTO.BoletaResponse;
 import com.apiBoleta.boleta.service.BoletaService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/boleta")
-@Tag(name = "Boletas", description = "Operaciones para gestionar boletas del sistema")
+@Tag(name = "Boleta", description = "API para gestión de boletas")
 @CrossOrigin(origins = "*")
 public class BoletaController {
 
-    private final BoletaService boletaService;
+    @Autowired
+    private BoletaService boletaService;
 
-    public BoletaController(BoletaService boletaService) {
-        this.boletaService = boletaService;
-    }
-
-    @Operation(summary = "Generar una boleta desde una venta")
-    @PostMapping
-    public ResponseEntity<BoletaResponse> generarBoleta(@RequestBody BoletaRequest request) {
+    @GetMapping("/usuario/{usuarioId}")
+    @Operation(summary = "Obtener boletas por usuario")
+    public ResponseEntity<Map<String, Object>> obtenerBoletasPorUsuario(@PathVariable Long usuarioId) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            BoletaResponse boleta = boletaService.generarBoleta(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(boleta);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            List<BoletaResponse> boletas = boletaService.obtenerBoletasPorUsuario(usuarioId);
+            response.put("success", true);
+            response.put("data", boletas);
+            response.put("total", boletas.size());
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
     }
 
-    @Operation(summary = "Listar todas las boletas")
-    @GetMapping
-    public ResponseEntity<List<BoletaResponse>> listarBoletas() {
-        try {
-            List<BoletaResponse> boletas = boletaService.listarBoletas();
-            return ResponseEntity.ok(boletas);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @Operation(summary = "Obtener una boleta por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<BoletaResponse> obtenerBoleta(@PathVariable Long id) {
+    @Operation(summary = "Obtener boleta por ID")
+    public ResponseEntity<Map<String, Object>> obtenerBoletaPorId(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            BoletaResponse boleta = boletaService.obtenerBoleta(id);
-            if (boleta != null) {
-                return ResponseEntity.ok(boleta);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            BoletaResponse boleta = boletaService.obtenerBoletaPorId(id);
+            response.put("success", true);
+            response.put("data", boleta);
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(404).body(response);
         }
     }
 
-    @Operation(summary = "Obtener boleta por número de boleta")
-    @GetMapping("/numero/{numeroBoleta}")
-    public ResponseEntity<BoletaResponse> obtenerBoletaPorNumero(@PathVariable String numeroBoleta) {
+    @GetMapping("/listar")
+    @Operation(summary = "Listar todas las boletas")
+    public ResponseEntity<Map<String, Object>> listarTodas() {
+        Map<String, Object> response = new HashMap<>();
         try {
-            BoletaResponse boleta = boletaService.obtenerBoletaPorNumero(numeroBoleta);
-            if (boleta != null) {
-                return ResponseEntity.ok(boleta);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+            List<Boleta> boletas = boletaService.listarTodas();
+            response.put("success", true);
+            response.put("data", boletas);
+            response.put("total", boletas.size());
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @Operation(summary = "Obtener boleta por ID de venta")
-    @GetMapping("/venta/{ventaId}")
-    public ResponseEntity<BoletaResponse> obtenerBoletaPorVenta(@PathVariable Long ventaId) {
-        try {
-            BoletaResponse boleta = boletaService.obtenerBoletaPorVenta(ventaId);
-            if (boleta != null) {
-                return ResponseEntity.ok(boleta);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @Operation(summary = "Listar boletas por usuario")
-    @GetMapping("/usuario/{usuarioRut}")
-    public ResponseEntity<List<BoletaResponse>> listarBoletasPorUsuario(@PathVariable Long usuarioRut) {
-        try {
-            List<BoletaResponse> boletas = boletaService.listarBoletasPorUsuario(usuarioRut);
-            return ResponseEntity.ok(boletas);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
     }
 }

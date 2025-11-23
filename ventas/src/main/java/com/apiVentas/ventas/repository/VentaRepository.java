@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface VentaRepository extends JpaRepository<Venta, Long> {
-    List<Venta> findByUsuarioRut(Long usuarioRut);
+    List<Venta> findByUsuarioId(Long usuarioId);
     List<Venta> findByProductoId(Long productoId);
 }

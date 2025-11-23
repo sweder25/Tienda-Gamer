@@ -1,92 +1,123 @@
 package com.apiRegistro.registro.controller;
 
 import com.apiRegistro.registro.model.Registro;
+import com.apiRegistro.registro.model.UsuarioRequest;
 import com.apiRegistro.registro.service.RegistroService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/registro")
-@Tag(name = "Registros", description = "Operaciones para gestionar registros de usuarios del sistema")
+@Tag(name = "Registro", description = "API para gestión de registros de usuarios")
+@CrossOrigin(origins = "*")
 public class RegistroController {
 
-    private final RegistroService service;
+    @Autowired
+    private RegistroService registroService;
 
-    public RegistroController(RegistroService service) {
-        this.service = service;
-    }
-
-    @Operation(summary = "Crear un nuevo registro")
-    @PostMapping
-    public ResponseEntity<Registro> crearRegistro(@RequestBody Registro registro) {
+    @PostMapping("/registrar")
+    @Operation(summary = "Registrar nuevo usuario")
+    public ResponseEntity<Map<String, Object>> registrarUsuario(@RequestBody UsuarioRequest request) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            Registro registroCreado = service.crearRegistro(registro);
-            return ResponseEntity.status(HttpStatus.CREATED).body(registroCreado);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Registro registro = registroService.registrarUsuario(request);
+            response.put("success", true);
+            response.put("message", "Usuario registrado exitosamente");
+            response.put("data", registro);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
-    @Operation(summary = "Listar todos los registros")
-    @GetMapping
-    public ResponseEntity<List<Registro>> listarRegistros() {
-        try {
-            List<Registro> registros = service.listarRegistros();
-            return ResponseEntity.ok(registros);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @Operation(summary = "Obtener un registro por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<Registro> obtenerRegistro(@PathVariable Long id) {
+    @Operation(summary = "Obtener registro por ID")
+    public ResponseEntity<Map<String, Object>> obtenerPorId(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            Registro registro = service.obtenerRegistro(id);
-            if (registro != null) {
-                return ResponseEntity.ok(registro);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Registro registro = registroService.obtenerPorId(id);
+            response.put("success", true);
+            response.put("data", registro);
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(404).body(response);
         }
     }
 
-    @Operation(summary = "Obtener registro por ID de usuario")
-    @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<Registro> obtenerPorUsuarioId(@PathVariable Long usuarioId) {
+    @GetMapping("/email/{email}")
+    @Operation(summary = "Obtener registro por email")
+    public ResponseEntity<Map<String, Object>> obtenerPorEmail(@PathVariable String email) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            Registro registro = service.obtenerPorUsuarioId(usuarioId);
-            if (registro != null) {
-                return ResponseEntity.ok(registro);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Registro registro = registroService.obtenerPorEmail(email);
+            response.put("success", true);
+            response.put("data", registro);
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(404).body(response);
         }
     }
 
-    @Operation(summary = "Eliminar un registro")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarRegistro(@PathVariable Long id) {
+    @GetMapping("/listar")
+    @Operation(summary = "Listar todos los registros")
+    public ResponseEntity<Map<String, Object>> listarTodos() {
+        Map<String, Object> response = new HashMap<>();
+        List<Registro> registros = registroService.listarTodos();
+        response.put("success", true);
+        response.put("data", registros);
+        response.put("total", registros.size());
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/actualizar/{id}")
+    @Operation(summary = "Actualizar registro")
+    public ResponseEntity<Map<String, Object>> actualizar(@PathVariable Long id, @RequestBody UsuarioRequest request) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            Registro registro = service.obtenerRegistro(id);
-            if (registro == null) {
-                return ResponseEntity.notFound().build();
-            }
-            service.eliminarRegistro(id);
-            return ResponseEntity.noContent().build();
+            Registro registro = registroService.actualizar(id, request);
+            response.put("success", true);
+            response.put("message", "Registro actualizado exitosamente");
+            response.put("data", registro);
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @DeleteMapping("/eliminar/{id}")
+    @Operation(summary = "Eliminar registro")
+    public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            registroService.eliminar(id);
+            response.put("success", true);
+            response.put("message", "Registro eliminado exitosamente");
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

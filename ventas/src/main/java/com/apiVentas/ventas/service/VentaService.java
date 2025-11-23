@@ -1,148 +1,218 @@
 package com.apiVentas.ventas.service;
 
+import com.apiVentas.ventas.model.Venta;
 import com.apiVentas.ventas.model.DTO.ProductoDTO;
 import com.apiVentas.ventas.model.DTO.UsuarioDTO;
 import com.apiVentas.ventas.model.DTO.VentaRequest;
 import com.apiVentas.ventas.model.DTO.VentaResponse;
-import com.apiVentas.ventas.model.Venta;
 import com.apiVentas.ventas.repository.VentaRepository;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.HttpClientErrorException;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 public class VentaService {
 
-    private final VentaRepository repository;
-    private final RestTemplate restTemplate;
-    
-    @Value("${usuarios.service.url:http://localhost:8086}")
-    private String usuariosServiceUrl;
-    
-    @Value("${productos.service.url:http://localhost:8083}")
+    @Autowired
+    private VentaRepository ventaRepository;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${servicio.productos.url:http://localhost:8083}")
     private String productosServiceUrl;
 
-    public VentaService(VentaRepository repository, RestTemplate restTemplate) {
-        this.repository = repository;
-        this.restTemplate = restTemplate;
-    }
+    @Value("${servicio.registro.url:http://localhost:8084}")
+    private String registroServiceUrl;
 
-    public VentaResponse crearVenta(VentaRequest ventaRequest) {
+    @Value("${servicio.boleta.url:http://localhost:8088}")
+    private String boletaServiceUrl;
+
+    public VentaResponse crearVenta(VentaRequest request) {
         try {
             // 1. Validar que el usuario existe
-            String urlUsuario = usuariosServiceUrl + "/api/usuarios/" + ventaRequest.getUsuarioRut();
-            UsuarioDTO usuario = restTemplate.getForObject(urlUsuario, UsuarioDTO.class);
+            String usuarioUrl = registroServiceUrl + "/api/registro/" + request.getUsuarioId();
+            Map<String, Object> usuarioResponse = restTemplate.getForObject(usuarioUrl, Map.class);
             
-            if (usuario == null) {
+            if (usuarioResponse == null || !(Boolean) usuarioResponse.get("success")) {
                 throw new RuntimeException("Usuario no encontrado");
             }
+
+            // 2. Obtener información del producto
+            String productoUrl = productosServiceUrl + "/api/productos/" + request.getProductoId();
+            Map<String, Object> productoResponse = restTemplate.getForObject(productoUrl, Map.class);
             
-            // 2. Validar que el producto existe
-            String urlProducto = productosServiceUrl + "/api/producto/" + ventaRequest.getProductoId();
-            ProductoDTO producto = restTemplate.getForObject(urlProducto, ProductoDTO.class);
-            
-            if (producto == null) {
+            if (productoResponse == null || !(Boolean) productoResponse.get("success")) {
                 throw new RuntimeException("Producto no encontrado");
             }
+
+            Map<String, Object> productoData = (Map<String, Object>) productoResponse.get("data");
+            Double precioUnitario = ((Number) productoData.get("precio")).doubleValue();
+            Double total = precioUnitario * request.getCantidad();
+
+            // 3. Crear la venta
+            Venta venta = new Venta();
+            venta.setUsuarioId(request.getUsuarioId());
+            venta.setProductoId(request.getProductoId());
+            venta.setCantidad(request.getCantidad());
+            venta.setPrecioUnitario(precioUnitario);
+            venta.setTotal(total);
+            venta.setFecha(LocalDateTime.now());
+
+            Venta ventaGuardada = ventaRepository.save(venta);
+
+            // 4. Generar boleta automáticamente
+            Long boletaId = generarBoleta(ventaGuardada.getId());
             
-            // 3. Validar cantidad
-            if (ventaRequest.getCantidad() <= 0) {
-                throw new RuntimeException("La cantidad debe ser mayor a 0");
+            // 5. Actualizar venta con el ID de la boleta
+            if (boletaId != null) {
+                ventaGuardada.setBoletaId(boletaId);
+                ventaGuardada = ventaRepository.save(ventaGuardada);
+            }
+
+            // 6. Crear respuesta completa
+            return crearVentaResponse(ventaGuardada, 
+                (Map<String, Object>) usuarioResponse.get("data"), 
+                productoData);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error al crear venta: " + e.getMessage());
+        }
+    }
+
+    public VentaResponse obtenerVentaPorId(Long id) {
+        Venta venta = ventaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+
+        try {
+            // Obtener datos del usuario
+            String usuarioUrl = registroServiceUrl + "/api/registro/" + venta.getUsuarioId();
+            Map<String, Object> usuarioResponse = restTemplate.getForObject(usuarioUrl, Map.class);
+            Map<String, Object> usuarioData = null;
+            if (usuarioResponse != null && (Boolean) usuarioResponse.get("success")) {
+                usuarioData = (Map<String, Object>) usuarioResponse.get("data");
+            }
+
+            // Obtener datos del producto
+            String productoUrl = productosServiceUrl + "/api/productos/" + venta.getProductoId();
+            Map<String, Object> productoResponse = restTemplate.getForObject(productoUrl, Map.class);
+            Map<String, Object> productoData = null;
+            if (productoResponse != null && (Boolean) productoResponse.get("success")) {
+                productoData = (Map<String, Object>) productoResponse.get("data");
+            }
+
+            return crearVentaResponse(venta, usuarioData, productoData);
+
+        } catch (Exception e) {
+            return crearVentaResponseSimple(venta);
+        }
+    }
+
+    public List<VentaResponse> obtenerVentasPorUsuario(Long usuarioId) {
+        List<Venta> ventas = ventaRepository.findByUsuarioId(usuarioId);
+        List<VentaResponse> responses = new ArrayList<>();
+
+        for (Venta venta : ventas) {
+            try {
+                responses.add(obtenerVentaPorId(venta.getId()));
+            } catch (Exception e) {
+                responses.add(crearVentaResponseSimple(venta));
+            }
+        }
+
+        return responses;
+    }
+
+    public List<Venta> listarTodas() {
+        return ventaRepository.findAll();
+    }
+
+    public void eliminarVenta(Long id) {
+        Venta venta = ventaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+        ventaRepository.delete(venta);
+    }
+
+    private Long generarBoleta(Long ventaId) {
+        try {
+            String boletaUrl = boletaServiceUrl + "/api/boleta/generar";
+            
+            Map<String, Object> boletaRequest = new HashMap<>();
+            boletaRequest.put("ventaId", ventaId);
+            
+            Map<String, Object> boletaResponse = restTemplate.postForObject(
+                boletaUrl, 
+                boletaRequest, 
+                Map.class
+            );
+            
+            if (boletaResponse != null && (Boolean) boletaResponse.get("success")) {
+                Map<String, Object> boletaData = (Map<String, Object>) boletaResponse.get("data");
+                Long boletaId = ((Number) boletaData.get("id")).longValue();
+                System.out.println("Boleta generada automáticamente con ID: " + boletaId);
+                return boletaId;
             }
             
-            // 4. Crear la venta
-            Venta venta = new Venta();
-            venta.setUsuarioRut(ventaRequest.getUsuarioRut());
-            venta.setProductoId(ventaRequest.getProductoId());
-            venta.setCantidad(ventaRequest.getCantidad());
-            venta.setPrecioUnitario(producto.getPrecio());
+            System.err.println("No se pudo generar la boleta automáticamente");
+            return null;
             
-            Venta ventaGuardada = repository.save(venta);
-            
-            // 5. Crear respuesta con información completa
-            VentaResponse response = new VentaResponse();
-            response.setId(ventaGuardada.getId());
-            response.setUsuarioRut(ventaGuardada.getUsuarioRut());
-            response.setNombreUsuario(usuario.getNombre());
-            response.setProductoId(ventaGuardada.getProductoId());
-            response.setNombreProducto(producto.getNombre());
-            response.setCantidad(ventaGuardada.getCantidad());
-            response.setPrecioUnitario(ventaGuardada.getPrecioUnitario());
-            response.setPrecioTotal(ventaGuardada.getPrecioTotal());
-            response.setFechaVenta(ventaGuardada.getFechaVenta());
-            response.setEstado(ventaGuardada.getEstado());
-            
-            System.out.println("Venta creada exitosamente: " + ventaGuardada.getId());
-            return response;
-            
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new RuntimeException("Usuario o producto no encontrado");
         } catch (Exception e) {
-            System.err.println("Error al crear venta: " + e.getMessage());
-            throw new RuntimeException("Error al procesar la venta: " + e.getMessage());
-        }
-    }
-
-    public List<VentaResponse> listarVentas() {
-        List<Venta> ventas = repository.findAll();
-        return ventas.stream().map(this::convertirAVentaResponse).collect(Collectors.toList());
-    }
-
-    public VentaResponse obtenerVenta(Long id) {
-        Venta venta = repository.findById(id).orElse(null);
-        if (venta == null) {
+            System.err.println("Error al generar boleta: " + e.getMessage());
             return null;
         }
-        return convertirAVentaResponse(venta);
     }
 
-    public List<VentaResponse> listarVentasPorUsuario(Long usuarioRut) {
-        List<Venta> ventas = repository.findByUsuarioRut(usuarioRut);
-        return ventas.stream().map(this::convertirAVentaResponse).collect(Collectors.toList());
-    }
-
-    public List<VentaResponse> listarVentasPorProducto(Long productoId) {
-        List<Venta> ventas = repository.findByProductoId(productoId);
-        return ventas.stream().map(this::convertirAVentaResponse).collect(Collectors.toList());
-    }
-
-    private VentaResponse convertirAVentaResponse(Venta venta) {
+    private VentaResponse crearVentaResponse(Venta venta, Map<String, Object> usuarioData, Map<String, Object> productoData) {
         VentaResponse response = new VentaResponse();
         response.setId(venta.getId());
-        response.setUsuarioRut(venta.getUsuarioRut());
+        response.setUsuarioId(venta.getUsuarioId());
         response.setProductoId(venta.getProductoId());
         response.setCantidad(venta.getCantidad());
         response.setPrecioUnitario(venta.getPrecioUnitario());
-        response.setPrecioTotal(venta.getPrecioTotal());
-        response.setFechaVenta(venta.getFechaVenta());
+        response.setTotal(venta.getTotal());
+        response.setFecha(venta.getFecha());
+        response.setBoletaId(venta.getBoletaId());
         response.setEstado(venta.getEstado());
-        
-        // Obtener información adicional si es necesario
-        try {
-            UsuarioDTO usuario = restTemplate.getForObject(
-                usuariosServiceUrl + "/api/usuarios/" + venta.getUsuarioRut(), 
-                UsuarioDTO.class
-            );
-            if (usuario != null) {
-                response.setNombreUsuario(usuario.getNombre());
-            }
-            
-            ProductoDTO producto = restTemplate.getForObject(
-                productosServiceUrl + "/api/producto/" + venta.getProductoId(), 
-                ProductoDTO.class
-            );
-            if (producto != null) {
-                response.setNombreProducto(producto.getNombre());
-            }
-        } catch (Exception e) {
-            System.err.println("Error al obtener información adicional: " + e.getMessage());
+
+        if (usuarioData != null) {
+            UsuarioDTO usuario = new UsuarioDTO();
+            usuario.setId(((Number) usuarioData.get("id")).longValue());
+            usuario.setNombre((String) usuarioData.get("nombre"));
+            usuario.setEmail((String) usuarioData.get("email"));
+            usuario.setDireccion((String) usuarioData.get("direccion"));
+            response.setUsuario(usuario);
         }
-        
+
+        if (productoData != null) {
+            ProductoDTO producto = new ProductoDTO();
+            producto.setId(((Number) productoData.get("id")).longValue());
+            producto.setNombre((String) productoData.get("nombre"));
+            producto.setPrecio(((Number) productoData.get("precio")).doubleValue());
+            producto.setDescripcion((String) productoData.get("descripcion"));
+            response.setProducto(producto);
+        }
+
+        return response;
+    }
+
+    private VentaResponse crearVentaResponseSimple(Venta venta) {
+        VentaResponse response = new VentaResponse();
+        response.setId(venta.getId());
+        response.setUsuarioId(venta.getUsuarioId());
+        response.setProductoId(venta.getProductoId());
+        response.setCantidad(venta.getCantidad());
+        response.setPrecioUnitario(venta.getPrecioUnitario());
+        response.setTotal(venta.getTotal());
+        response.setFecha(venta.getFecha());
+        response.setBoletaId(venta.getBoletaId());
+        response.setEstado(venta.getEstado());
         return response;
     }
 }

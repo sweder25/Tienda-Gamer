@@ -1,88 +1,114 @@
 package com.apiVentas.ventas.controller;
 
+import com.apiVentas.ventas.model.Venta;
 import com.apiVentas.ventas.model.DTO.VentaRequest;
 import com.apiVentas.ventas.model.DTO.VentaResponse;
 import com.apiVentas.ventas.service.VentaService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ventas")
-@Tag(name = "Ventas", description = "Operaciones para gestionar ventas del sistema")
+@Tag(name = "Ventas", description = "API para gestión de ventas")
 @CrossOrigin(origins = "*")
 public class VentasController {
 
-    private final VentaService ventaService;
+    @Autowired
+    private VentaService ventaService;
 
-    public VentasController(VentaService ventaService) {
-        this.ventaService = ventaService;
-    }
-
-    @Operation(summary = "Crear una nueva venta")
-    @PostMapping
-    public ResponseEntity<VentaResponse> crearVenta(@RequestBody VentaRequest ventaRequest) {
+    @PostMapping("/crear")
+    @Operation(summary = "Crear nueva venta y generar boleta automáticamente")
+    public ResponseEntity<Map<String, Object>> crearVenta(@RequestBody VentaRequest request) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            VentaResponse venta = ventaService.crearVenta(ventaRequest);
-            return ResponseEntity.status(HttpStatus.CREATED).body(venta);
+            VentaResponse venta = ventaService.crearVenta(request);
+            response.put("success", true);
+            response.put("message", "Venta creada y boleta generada exitosamente");
+            response.put("data", venta);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
-    @Operation(summary = "Listar todas las ventas")
-    @GetMapping
-    public ResponseEntity<List<VentaResponse>> listarVentas() {
-        try {
-            List<VentaResponse> ventas = ventaService.listarVentas();
-            return ResponseEntity.ok(ventas);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @Operation(summary = "Obtener una venta por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<VentaResponse> obtenerVenta(@PathVariable Long id) {
+    @Operation(summary = "Obtener venta por ID")
+    public ResponseEntity<Map<String, Object>> obtenerVentaPorId(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            VentaResponse venta = ventaService.obtenerVenta(id);
-            if (venta != null) {
-                return ResponseEntity.ok(venta);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            VentaResponse venta = ventaService.obtenerVentaPorId(id);
+            response.put("success", true);
+            response.put("data", venta);
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(404).body(response);
         }
     }
 
-    @Operation(summary = "Listar ventas por usuario")
-    @GetMapping("/usuario/{usuarioRut}")
-    public ResponseEntity<List<VentaResponse>> listarVentasPorUsuario(@PathVariable Long usuarioRut) {
+    @GetMapping("/usuario/{usuarioId}")
+    @Operation(summary = "Obtener ventas por usuario")
+    public ResponseEntity<Map<String, Object>> obtenerVentasPorUsuario(@PathVariable Long usuarioId) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            List<VentaResponse> ventas = ventaService.listarVentasPorUsuario(usuarioRut);
-            return ResponseEntity.ok(ventas);
+            List<VentaResponse> ventas = ventaService.obtenerVentasPorUsuario(usuarioId);
+            response.put("success", true);
+            response.put("data", ventas);
+            response.put("total", ventas.size());
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
     }
 
-    @Operation(summary = "Listar ventas por producto")
-    @GetMapping("/producto/{productoId}")
-    public ResponseEntity<List<VentaResponse>> listarVentasPorProducto(@PathVariable Long productoId) {
+    @GetMapping("/listar")
+    @Operation(summary = "Listar todas las ventas")
+    public ResponseEntity<Map<String, Object>> listarTodas() {
+        Map<String, Object> response = new HashMap<>();
         try {
-            List<VentaResponse> ventas = ventaService.listarVentasPorProducto(productoId);
-            return ResponseEntity.ok(ventas);
+            List<Venta> ventas = ventaService.listarTodas();
+            response.put("success", true);
+            response.put("data", ventas);
+            response.put("total", ventas.size());
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    @DeleteMapping("/eliminar/{id}")
+    @Operation(summary = "Eliminar venta")
+    public ResponseEntity<Map<String, Object>> eliminarVenta(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            ventaService.eliminarVenta(id);
+            response.put("success", true);
+            response.put("message", "Venta eliminada exitosamente");
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

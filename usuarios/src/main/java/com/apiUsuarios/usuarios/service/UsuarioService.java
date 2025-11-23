@@ -1,63 +1,59 @@
 package com.apiUsuarios.usuarios.service;
 
-import com.apiUsuarios.usuarios.model.RegistroDTO;
 import com.apiUsuarios.usuarios.model.Usuario;
+import com.apiUsuarios.usuarios.model.UsuarioRequest;
 import com.apiUsuarios.usuarios.repository.UsuarioRepository;
-
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
 @Service
 public class UsuarioService {
 
-    private final UsuarioRepository repository;
-    private final RestTemplate restTemplate;
-    
-    @Value("${registro.service.url:http://localhost:8084}")
-    private String registroServiceUrl;
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
-    public UsuarioService(UsuarioRepository repository, RestTemplate restTemplate) {
-        this.repository = repository;
-        this.restTemplate = restTemplate;
-    }
-
-    public Usuario crearUsuario(Usuario usuario) {
-        // Guardar el usuario
-        Usuario usuarioGuardado = repository.save(usuario);
-        System.out.println("Usuario guardado con ID: " + usuarioGuardado.getRut());
-        
-        // Crear entrada en registro con el ID del usuario
+    public Usuario crearUsuario(UsuarioRequest request) {
         try {
-            RegistroDTO registroDTO = new RegistroDTO();
-            registroDTO.setUsuarioId(usuarioGuardado.getRut());
-            
-            String url = registroServiceUrl + "/api/registro";
-            System.out.println("Enviando petición a: " + url);
-            System.out.println("DTO: " + registroDTO);
-            
-            RegistroDTO respuesta = restTemplate.postForObject(url, registroDTO, RegistroDTO.class);
-            System.out.println("Respuesta del registro: " + respuesta);
-            
+            // Validar que el email no exista
+            if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
+                throw new RuntimeException("el email ya esta registrado imbecil");
+            }
+
+            Usuario usuario = new Usuario();
+            usuario.setEmail(request.getEmail());
+            usuario.setPassword(request.getPassword());
+
+            return usuarioRepository.save(usuario);
+
         } catch (Exception e) {
-            System.err.println("Error al crear registro para usuario: " + e.getMessage());
-            e.printStackTrace();
+            throw new RuntimeException("Error al crear usuario imbecil: " + e.getMessage());
         }
-        
-        return usuarioGuardado;
     }
 
-    public List<Usuario> listarUsuarios() {
-        return repository.findAll();
+    public Usuario obtenerPorId(Long id) {
+        return usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado imbecil"));
     }
 
-    public Usuario obtenerUsuario(Long rut) {
-        return repository.findById(rut).orElse(null);
+    public Usuario obtenerPorEmail(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado imbecil"));
     }
 
-    public void eliminarUsuario(Long rut) {
-        repository.deleteById(rut);
+    public List<Usuario> listarTodos() {
+        return usuarioRepository.findAll();
+    }
+
+    public Usuario actualizar(Long id, UsuarioRequest request) {
+        Usuario usuario = obtenerPorId(id);
+        usuario.setEmail(request.getEmail());
+        usuario.setPassword(request.getPassword());
+        return usuarioRepository.save(usuario);
+    }
+
+    public void eliminar(Long id) {
+        usuarioRepository.deleteById(id);
     }
 }

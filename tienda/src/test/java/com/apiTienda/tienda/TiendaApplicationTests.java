@@ -1,13 +1,15 @@
 package com.apiTienda.tienda;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
-@SpringBootTest
-class TiendaApplicationTests {
+@SpringBootApplication
+@EnableConfigurationProperties
+public class TiendaApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(TiendaApplication.class, args);
+    }
 
 }

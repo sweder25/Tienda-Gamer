@@ -1,10 +1,9 @@
 package com.apiVentas.ventas.model.DTO;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -12,13 +11,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class VentaResponse {
     private Long id;
-    private Long usuarioRut;
-    private String nombreUsuario;
+    private Long usuarioId;
     private Long productoId;
-    private String nombreProducto;
     private Integer cantidad;
-    private BigDecimal precioUnitario;
-    private BigDecimal precioTotal;
-    private LocalDateTime fechaVenta;
+    private Double precioUnitario;
+    private Double total;
+    private LocalDateTime fecha;
+    private Long boletaId;
     private String estado;
+    private UsuarioDTO usuario;
+    private ProductoDTO producto;
 }

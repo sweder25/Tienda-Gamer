@@ -1,102 +1,123 @@
 package com.apiUsuarios.usuarios.controller;
 
 import com.apiUsuarios.usuarios.model.Usuario;
+import com.apiUsuarios.usuarios.model.UsuarioRequest;
 import com.apiUsuarios.usuarios.service.UsuarioService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Description;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/usuarios")
-@Tag(name = "Usuarios", description = "Operaciones para gestionar usuarios del sistema")
+@Tag(name = "Usuarios", description = "API para gestión de usuarios")
+@CrossOrigin(origins = "*")
 public class UsuarioController {
-
-    private static final Logger logger = LoggerFactory.getLogger(UsuarioController.class);
 
     @Autowired
     private UsuarioService usuarioService;
 
-    // === OBTENER TODOS LOS USUARIOS ===
-    @Operation(summary = "Obtener todos los usuarios")
-    @Description("Este endpoint permite obtener una lista de todos los usuarios registrados en el sistema.")
-    @GetMapping
-    public ResponseEntity<List<Usuario>> listarUsuarios() {
+    @PostMapping("/crear")
+    @Operation(summary = "Crear nuevo usuario")
+    public ResponseEntity<Map<String, Object>> crearUsuario(@RequestBody UsuarioRequest request) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            List<Usuario> usuarios = usuarioService.listarUsuarios();
-            return ResponseEntity.ok(usuarios);
-        } catch (Exception e) {
-            logger.error("Error al obtener todos los usuarios: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Usuario usuario = usuarioService.crearUsuario(request);
+            response.put("success", true);
+            response.put("message", "Usuario creado exitosamente");
+            response.put("data", usuario);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
-    // === OBTENER USUARIO POR RUT ===
-    @Operation(summary = "Obtener usuario por RUT")
-    @Description("Este endpoint permite obtener un usuario específico utilizando su RUT.")
-    @GetMapping("/{rut}")
-    public ResponseEntity<Usuario> obtenerUsuario(@PathVariable Long rut) {
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtener usuario por ID")
+    public ResponseEntity<Map<String, Object>> obtenerPorId(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            Usuario usuario = usuarioService.obtenerUsuario(rut);
-            if (usuario != null) {
-                return ResponseEntity.ok(usuario);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            logger.error("Error interno al obtener usuario {}: {}", rut, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Usuario usuario = usuarioService.obtenerPorId(id);
+            response.put("success", true);
+            response.put("data", usuario);
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(404).body(response);
         }
     }
 
-    // === CREAR USUARIO ===
-    @Operation(summary = "Crear un nuevo usuario")
-    @Description("Este endpoint permite crear un nuevo usuario en el sistema y registrarlo automáticamente.")
-    @PostMapping
-    public ResponseEntity<Usuario> crearUsuario(@RequestBody Usuario usuario) {
+    @GetMapping("/email/{email}")
+    @Operation(summary = "Obtener usuario por email")
+    public ResponseEntity<Map<String, Object>> obtenerPorEmail(@PathVariable String email) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            // Verificar si el RUT ya existe
-            Usuario usuarioExistente = usuarioService.obtenerUsuario(usuario.getRut());
-            if (usuarioExistente != null) {
-                logger.warn("Intento de crear usuario con RUT duplicado: {}", usuario.getRut());
-                return ResponseEntity.status(HttpStatus.CONFLICT).build();
-            }
+            Usuario usuario = usuarioService.obtenerPorEmail(email);
+            response.put("success", true);
+            response.put("data", usuario);
+            return ResponseEntity.ok(response);
             
-            Usuario usuarioCreado = usuarioService.crearUsuario(usuario);
-            return ResponseEntity.status(HttpStatus.CREATED).body(usuarioCreado);
-            
-        } catch (Exception e) {
-            logger.error("Error interno al crear usuario: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(404).body(response);
         }
     }
 
-    // === ELIMINAR USUARIO ===
-    @Operation(summary = "Eliminar un usuario existente")
-    @Description("Este endpoint permite eliminar un usuario del sistema utilizando su RUT.")
-    @DeleteMapping("/{rut}")
-    public ResponseEntity<Void> eliminarUsuario(@PathVariable Long rut) {
+    @GetMapping("/listar")
+    @Operation(summary = "Listar todos los usuarios")
+    public ResponseEntity<Map<String, Object>> listarTodos() {
+        Map<String, Object> response = new HashMap<>();
+        List<Usuario> usuarios = usuarioService.listarTodos();
+        response.put("success", true);
+        response.put("data", usuarios);
+        response.put("total", usuarios.size());
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/actualizar/{id}")
+    @Operation(summary = "Actualizar usuario")
+    public ResponseEntity<Map<String, Object>> actualizar(@PathVariable Long id, @RequestBody UsuarioRequest request) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            Usuario usuario = usuarioService.obtenerUsuario(rut);
-            if (usuario == null) {
-                return ResponseEntity.notFound().build();
-            }
+            Usuario usuario = usuarioService.actualizar(id, request);
+            response.put("success", true);
+            response.put("message", "Usuario actualizado exitosamente");
+            response.put("data", usuario);
+            return ResponseEntity.ok(response);
             
-            usuarioService.eliminarUsuario(rut);
-            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @DeleteMapping("/eliminar/{id}")
+    @Operation(summary = "Eliminar usuario")
+    public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            usuarioService.eliminar(id);
+            response.put("success", true);
+            response.put("message", "Usuario eliminado exitosamente");
+            return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("Error interno al eliminar usuario {}: {}", rut, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

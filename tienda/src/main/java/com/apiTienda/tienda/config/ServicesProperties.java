@@ -1,32 +1,27 @@
 package com.apiTienda.tienda.config;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties(prefix = "services")
+
+
+
+//Clase para mapear las URLs de los servicios desde application.properties
+//@Data genera getters y setters automáticamente
+@Data
 public class ServicesProperties {
-    private String productosUrl;
-    private String registrosUrl;
-    private String usuariosUrl;
-    private String ventasUrl;
-     private String boletaUrl;
-
-    public String getProductosUrl() { return productosUrl; }
-    public void setProductosUrl(String productosUrl) { this.productosUrl = productosUrl; }
-
-    public String getRegistrosUrl() { return registrosUrl; }
-    public void setRegistrosUrl(String registrosUrl) { this.registrosUrl = registrosUrl; }
-
-    public String getUsuariosUrl() { return usuariosUrl; }
-    public void setUsuariosUrl(String usuariosUrl) { this.usuariosUrl = usuariosUrl; }
-
-    public String getVentasUrl() { return ventasUrl; }
-    public void setVentasUrl(String ventasUrl) { this.ventasUrl = ventasUrl; }
-
-    public String getBoletaUrl() { return boletaUrl; }
-    public void setBoletaUrl(String boletaUrl) { this.boletaUrl = boletaUrl; }
-
-
-
+    private ServiceUrl ingreso = new ServiceUrl();
+    private ServiceUrl productos = new ServiceUrl();
+    private ServiceUrl registro = new ServiceUrl();
+    private ServiceUrl usuarios = new ServiceUrl();
+    private ServiceUrl ventas = new ServiceUrl();
+    private ServiceUrl boleta = new ServiceUrl();
+    
+    @Data
+    public static class ServiceUrl {
+        private String url;
+    }
 }

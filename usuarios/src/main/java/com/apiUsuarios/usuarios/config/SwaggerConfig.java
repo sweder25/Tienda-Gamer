@@ -11,7 +11,7 @@ public class SwaggerConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("EDUTECH API - Usuarios")
+                        .title("TiendaGamer - Usuarios")
                         .version("1.0.0")
                         .description("Api de Usuarios para la Tienda Gamer"));
     }

@@ -1,11 +1,9 @@
-
 package com.apiUsuarios.usuarios.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 
 @Entity
 @Table(name = "usuarios")
@@ -14,18 +12,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Usuario {
     @Id
-    private Long rut;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     
-    @Column(name = "nombre")
-    private String nombre;
-    
-    @Column(name = "email")
+    @Column(nullable = false, unique = true)
     private String email;
     
-    @Column(name = "contrasena")
-    private String contrasena;
-
-    @Column(name = "rol")
-    private String rol;
-    
+    @Column(nullable = false)
+    private String password;
 }

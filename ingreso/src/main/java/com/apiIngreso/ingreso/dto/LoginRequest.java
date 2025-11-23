@@ -1,13 +1,13 @@
 package com.apiIngreso.ingreso.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginRequest {
-    private Long rut;
+    private String email;
     private String password;
 }
