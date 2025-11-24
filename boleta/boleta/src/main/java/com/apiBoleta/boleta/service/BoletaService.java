@@ -1,20 +1,18 @@
 package com.apiBoleta.boleta.service;
 
 import com.apiBoleta.boleta.model.Boleta;
-import com.apiBoleta.boleta.model.DTO.BoletaRequest;
-import com.apiBoleta.boleta.model.DTO.BoletaResponse;
-import com.apiBoleta.boleta.model.DTO.UsuarioDTO;
-import com.apiBoleta.boleta.model.DTO.VentaDTO;
 import com.apiBoleta.boleta.repository.BoletaRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class BoletaService {
@@ -25,152 +23,120 @@ public class BoletaService {
     @Autowired
     private RestTemplate restTemplate;
 
-    @Value("${servicio.ventas.url:http://localhost:8087}")
-    private String ventasServiceUrl;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @Value("${servicio.registro.url:http://localhost:8084}")
-    private String registroServiceUrl;
+    private static final String VENTAS_URL = "http://localhost:8087/api/ventas";
 
-    public BoletaResponse generarBoleta(BoletaRequest request) {
+    @Transactional
+    public Boleta generarBoleta(Long ventaId) {
         try {
-            //Obtener información de la venta
-            String ventaUrl = ventasServiceUrl + "/api/ventas/" + request.getVentaId();
-            Map<String, Object> ventaResponse = restTemplate.getForObject(ventaUrl, Map.class);
+            System.out.println("=== GENERANDO BOLETA ===");
+            System.out.println("Consultando venta ID: " + ventaId);
             
-            if (ventaResponse == null || !(Boolean) ventaResponse.get("success")) {
-                throw new RuntimeException("Venta no encontrada");
+            String url = VENTAS_URL + "/" + ventaId;
+            System.out.println("URL: " + url);
+            
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            System.out.println("Response status: " + response.getStatusCode());
+            System.out.println("Response body: " + response.getBody());
+            
+            if (response.getBody() == null) {
+                throw new RuntimeException("Response body es null");
             }
             
-            Map<String, Object> ventaData = (Map<String, Object>) ventaResponse.get("data");
-            Long usuarioId = ((Number) ventaData.get("usuarioId")).longValue();
-            Double total = ((Number) ventaData.get("total")).doubleValue();
+            Map<String, Object> responseBody = response.getBody();
             
-            //Obtener información del usuario desde REGISTRO
-            String registroUrl = registroServiceUrl + "/api/registro/" + usuarioId;
-            Map<String, Object> registroResponse = restTemplate.getForObject(registroUrl, Map.class);
-            
-            if (registroResponse == null || !(Boolean) registroResponse.get("success")) {
-                throw new RuntimeException("Usuario no encontrado");
+            if (!responseBody.containsKey("data") || responseBody.get("data") == null) {
+                throw new RuntimeException("No se encontró 'data' en la respuesta: " + responseBody);
             }
             
-            Map<String, Object> userData = (Map<String, Object>) registroResponse.get("data");
+            Map<String, Object> ventaData = (Map<String, Object>) responseBody.get("data");
+            System.out.println("Venta data: " + ventaData);
             
-            //Crear la boleta
             Boleta boleta = new Boleta();
-            boleta.setUsuarioId(usuarioId);
-            boleta.setVentaId(request.getVentaId());
+            boleta.setVentaId(ventaId);
+            boleta.setNumero(generarNumeroBoleta());
+            boleta.setFechaEmision(LocalDateTime.now());
+            boleta.setEstado("EMITIDA");
+            
+            // Asignar total
+            Object totalObj = ventaData.get("total");
+            Double total = 0.0;
+            if (totalObj instanceof Number) {
+                total = ((Number) totalObj).doubleValue();
+            }
+            System.out.println("Total asignado: " + total);
             boleta.setTotal(total);
-            boleta.setFecha(LocalDateTime.now());
-            boleta.setDetalle(generarDetalle(ventaData, userData));
             
+            // Datos del cliente
+            boleta.setNombreCliente(ventaData.get("nombreCliente").toString());
+            boleta.setEmailCliente(ventaData.get("emailCliente").toString());
+            
+            // Datos adicionales
+            if (ventaData.containsKey("usuarioId") && ventaData.get("usuarioId") != null) {
+                Object usuarioIdObj = ventaData.get("usuarioId");
+                boleta.setUsuarioId(usuarioIdObj instanceof Number ? ((Number) usuarioIdObj).longValue() : null);
+            }
+            
+            if (ventaData.containsKey("direccion") && ventaData.get("direccion") != null) {
+                boleta.setDireccionEnvio(ventaData.get("direccion").toString());
+            }
+            
+            if (ventaData.containsKey("metodoPago") && ventaData.get("metodoPago") != null) {
+                boleta.setMetodoPago(ventaData.get("metodoPago").toString());
+            } else {
+                boleta.setMetodoPago("NO_ESPECIFICADO");
+            }
+            
+            // Detalle de productos como JSON
+            if (ventaData.containsKey("detalles") && ventaData.get("detalles") != null) {
+                try {
+                    String detalleJson = objectMapper.writeValueAsString(ventaData.get("detalles"));
+                    boleta.setDetalleProductos(detalleJson);
+                    System.out.println("Detalle productos guardado: " + detalleJson);
+                } catch (Exception e) {
+                    System.err.println("Error al serializar productos: " + e.getMessage());
+                }
+            }
+            
+            System.out.println("Guardando boleta...");
+            System.out.println("Boleta antes de guardar - Total: " + boleta.getTotal());
             Boleta boletaGuardada = boletaRepository.save(boleta);
+            System.out.println("Boleta guardada exitosamente: " + boletaGuardada.getNumero());
+            System.out.println("Boleta guardada - Total: " + boletaGuardada.getTotal());
             
-            //Crear respuesta
-            return crearBoletaResponse(boletaGuardada, userData, ventaData);
+            return boletaGuardada;
             
         } catch (Exception e) {
-            throw new RuntimeException("Error al generar boleta: " + e.getMessage());
+            System.err.println("ERROR en generarBoleta: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al generar boleta: " + e.getMessage(), e);
         }
     }
 
+    private String generarNumeroBoleta() {
+        return "BOL-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+    }
 
-        // Obtener boleta por ID con detalles de usuario y venta
-    public BoletaResponse obtenerBoletaPorId(Long id) {
+    public Boleta obtenerPorId(Long id) {
         Boleta boleta = boletaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Boleta no encontrada"));
-        
-        try {
-            //Obtener datos del usuario
-            //Se mapea a registroServiceUrl para obtener info del usuario
-            String registroUrl = registroServiceUrl + "/api/registro/" + boleta.getUsuarioId();
-            Map<String, Object> registroResponse = restTemplate.getForObject(registroUrl, Map.class);
-            Map<String, Object> userData = null;
-            if (registroResponse != null && (Boolean) registroResponse.get("success")) {
-                userData = (Map<String, Object>) registroResponse.get("data");
-            }
-            
-            //Obtener datos de la venta
-            String ventaUrl = ventasServiceUrl + "/api/ventas/" + boleta.getVentaId();
-            Map<String, Object> ventaResponse = restTemplate.getForObject(ventaUrl, Map.class);
-            Map<String, Object> ventaData = null;
-            if (ventaResponse != null && (Boolean) ventaResponse.get("success")) {
-                ventaData = (Map<String, Object>) ventaResponse.get("data");
-            }
-            
-            return crearBoletaResponse(boleta, userData, ventaData);
-            
-        } catch (Exception e) {
-            //Si falla la consulta, devolver solo datos de la boleta
-            return crearBoletaResponseSimple(boleta);
-        }
+            .orElseThrow(() -> new RuntimeException("Boleta no encontrada con ID: " + id));
+        System.out.println("Boleta obtenida por ID - Total: " + boleta.getTotal());
+        return boleta;
     }
 
-    public List<BoletaResponse> obtenerBoletasPorUsuario(Long usuarioId) {
-        List<Boleta> boletas = boletaRepository.findByUsuarioId(usuarioId);
-        List<BoletaResponse> responses = new ArrayList<>();
-        
-        for (Boleta boleta : boletas) {
-            try {
-                responses.add(obtenerBoletaPorId(boleta.getId()));
-            } catch (Exception e) {
-                responses.add(crearBoletaResponseSimple(boleta));
-            }
-        }
-        
-        return responses;
+    public Boleta obtenerPorVentaId(Long ventaId) {
+        Boleta boleta = boletaRepository.findByVentaId(ventaId)
+            .orElseThrow(() -> new RuntimeException("Boleta no encontrada para venta ID: " + ventaId));
+        System.out.println("Boleta obtenida por VentaId - Total: " + boleta.getTotal());
+        return boleta;
     }
 
     public List<Boleta> listarTodas() {
-        return boletaRepository.findAll();
-    }
-
-    private String generarDetalle(Map<String, Object> ventaData, Map<String, Object> userData) {
-        StringBuilder detalle = new StringBuilder();
-        detalle.append("=== BOLETA DE VENTA ===\n");
-        detalle.append("Cliente: ").append(userData.get("nombre")).append("\n");
-        detalle.append("Email: ").append(userData.get("email")).append("\n");
-        detalle.append("Dirección: ").append(userData.get("direccion")).append("\n");
-        detalle.append("Fecha: ").append(LocalDateTime.now()).append("\n");
-        detalle.append("Venta ID: ").append(ventaData.get("id")).append("\n");
-        detalle.append("Total: $").append(ventaData.get("total")).append("\n");
-        detalle.append("========================");
-        return detalle.toString();
-    }
-
-    private BoletaResponse crearBoletaResponse(Boleta boleta, Map<String, Object> userData, Map<String, Object> ventaData) {
-        BoletaResponse response = new BoletaResponse();
-        response.setId(boleta.getId());
-        response.setTotal(boleta.getTotal());
-        response.setFecha(boleta.getFecha());
-        response.setDetalle(boleta.getDetalle());
-        
-        // Mapear datos de usuario
-        if (userData != null) {
-            UsuarioDTO usuario = new UsuarioDTO();
-            usuario.setId(((Number) userData.get("id")).longValue());
-            usuario.setNombre((String) userData.get("nombre"));
-            usuario.setEmail((String) userData.get("email"));
-            usuario.setDireccion((String) userData.get("direccion"));
-            response.setUsuario(usuario);
-        }
-        
-        // Mapear datos de venta
-        if (ventaData != null) {
-            VentaDTO venta = new VentaDTO();
-            venta.setId(((Number) ventaData.get("id")).longValue());
-            venta.setTotal(((Number) ventaData.get("total")).doubleValue());
-            response.setVenta(venta);
-        }
-        
-        return response;
-    }
-
-    private BoletaResponse crearBoletaResponseSimple(Boleta boleta) {
-        BoletaResponse response = new BoletaResponse();
-        response.setId(boleta.getId());
-        response.setTotal(boleta.getTotal());
-        response.setFecha(boleta.getFecha());
-        response.setDetalle(boleta.getDetalle());
-        return response;
+        List<Boleta> boletas = boletaRepository.findAll();
+        System.out.println("=== LISTANDO TODAS LAS BOLETAS ===");
+        boletas.forEach(b -> System.out.println("Boleta ID: " + b.getId() + " - Total: " + b.getTotal()));
+        return boletas;
     }
 }

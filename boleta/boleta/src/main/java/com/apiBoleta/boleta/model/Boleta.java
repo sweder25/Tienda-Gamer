@@ -10,25 +10,44 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "boletas")
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class Boleta {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @Column(nullable = false)
-    private Long usuarioId;
-    
-    @Column(nullable = false)
+
+    @Column(name = "numero_boleta", nullable = false, unique = true)
+    private String numero;
+
+    @Column(name = "venta_id", nullable = false)
     private Long ventaId;
-    
-    @Column(nullable = false)
+
+    @Column(name = "usuario_id")
+    private Long usuarioId;
+
+    @Column(name = "fecha_emision", nullable = false)
+    private LocalDateTime fechaEmision;
+
+    @Column(name = "total", nullable = false)
     private Double total;
-    
-    @Column(nullable = false)
-    private LocalDateTime fecha;
-    
+
+    @Column(name = "nombre_cliente", nullable = false)
+    private String nombreCliente;
+
+    @Column(name = "email_cliente", nullable = false)
+    private String emailCliente;
+
+    @Column(name = "direccion_envio")
+    private String direccionEnvio;
+
+    @Column(name = "metodo_pago")
+    private String metodoPago;
+
     @Column(length = 1000)
-    private String detalle;
+    private String estado;
+
+    @Column(name = "detalle_productos", columnDefinition = "TEXT")
+    private String detalleProductos;
 }

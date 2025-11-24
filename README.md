@@ -36,7 +36,7 @@ Sistema completo de e-commerce para tienda gamer implementado con arquitectura d
                │                 │                │
         ┌──────▼──────┐   ┌──────▼──────┐  ┌─────▼──────┐
         │USUARIOS:8086│   │USUARIOS:8086│  │BOLETA:8088 │
-        └─────────────┘   └─────────────┘  └────────────┘
+        └─────────────┘   └─────────────┘  └────┬───────┘
                │                                  │
         ┌──────▼──────┐                    ┌─────▼──────┐
         │PRODUCTOS:8083│◄───────────────────┤VENTAS:8087 │
@@ -49,19 +49,19 @@ Sistema completo de e-commerce para tienda gamer implementado con arquitectura d
 
 | Servicio | Puerto | Descripción | Base de Datos |
 |----------|--------|-------------|---------------|
-| **INGRESO** | 8080 | Autenticación y login de usuarios | `tiendagamer` |
-| **PRODUCTOS** | 8083 | Gestión del catálogo de productos | `tiendagamer` |
-| **REGISTRO** | 8084 | Registro de nuevos usuarios | `tiendagamer` |
+| **INGRESO** | 8080 | Autenticación y login de usuarios | `tienda_gamer` |
+| **PRODUCTOS** | 8083 | Gestión del catálogo de productos | `tienda_gamer` |
+| **REGISTRO** | 8084 | Registro de nuevos usuarios | `tienda_gamer` |
 | **TIENDA** (Gateway) | 8085 | Punto de entrada único - API Gateway | N/A |
-| **USUARIOS** | 8086 | Gestión de credenciales (email/password) | `tiendagamer` |
-| **VENTAS** | 8087 | Procesamiento y registro de ventas | `tiendagamer` |
-| **BOLETA** | 8088 | Generación automática de boletas | `tiendagamer` |
+| **USUARIOS** | 8086 | Gestión de credenciales (email/password) | `tienda_gamer` |
+| **VENTAS** | 8087 | Procesamiento y registro de ventas | `tienda_gamer` |
+| **BOLETA** | 8088 | Generación automática de boletas electrónicas | `tienda_gamer` |
 
 ---
 
 ## 🗄️ Bases de Datos
 
-### Base de Datos Compartida: `tiendagamer`
+### Base de Datos Compartida: `tienda_gamer`
 
 **Tablas por Servicio:**
 
@@ -102,13 +102,23 @@ CREATE TABLE productos (
 CREATE TABLE ventas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     usuario_id BIGINT NOT NULL,
+    total DOUBLE NOT NULL,
+    fecha DATETIME NOT NULL,
+    nombre_cliente VARCHAR(255) NOT NULL,
+    email_cliente VARCHAR(255) NOT NULL,
+    direccion VARCHAR(500),
+    metodo_pago VARCHAR(50) NOT NULL,
+    estado VARCHAR(50) NOT NULL DEFAULT 'COMPLETADA'
+);
+
+CREATE TABLE venta_detalles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    venta_id BIGINT NOT NULL,
     producto_id BIGINT NOT NULL,
     cantidad INT NOT NULL,
     precio_unitario DOUBLE NOT NULL,
-    total DOUBLE NOT NULL,
-    fecha DATETIME NOT NULL,
-    boleta_id BIGINT,
-    estado VARCHAR(255) NOT NULL DEFAULT 'COMPLETADA'
+    subtotal DOUBLE NOT NULL,
+    FOREIGN KEY (venta_id) REFERENCES ventas(id)
 );
 ```
 
@@ -116,11 +126,17 @@ CREATE TABLE ventas (
 ```sql
 CREATE TABLE boletas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    numero_boleta VARCHAR(100) NOT NULL UNIQUE,
     venta_id BIGINT NOT NULL,
-    usuario_id BIGINT NOT NULL,
+    usuario_id BIGINT,
     fecha_emision DATETIME NOT NULL,
     total DOUBLE NOT NULL,
-    estado VARCHAR(255) NOT NULL DEFAULT 'EMITIDA'
+    nombre_cliente VARCHAR(255) NOT NULL,
+    email_cliente VARCHAR(255) NOT NULL,
+    direccion_envio VARCHAR(500),
+    metodo_pago VARCHAR(50) NOT NULL DEFAULT 'NO_ESPECIFICADO',
+    estado VARCHAR(50) DEFAULT 'EMITIDA',
+    detalle_productos TEXT
 );
 ```
 
@@ -128,7 +144,7 @@ CREATE TABLE boletas (
 
 ## 🔄 Flujo del Proyecto
 
-### 1. **Creacion de Usuario**
+### 1. **Creación de Usuario**
 ```
 Cliente → API Gateway (8085) → REGISTRO (8084)
                                       ↓
@@ -242,7 +258,7 @@ Cliente → API Gateway (8085) → PRODUCTOS (8083)
 
 ---
 
-### 4. **Realizar Venta**
+### 4. **Realizar Venta (Carrito Completo)**
 ```
 Cliente → API Gateway (8085) → VENTAS (8087)
                                       ↓
@@ -250,15 +266,18 @@ Cliente → API Gateway (8085) → VENTAS (8087)
                                       ↓
                               Valida PRODUCTOS (8083)
                                       ↓
-                              Genera BOLETA (8088)
+                              Crea Venta con Detalles
+                                      ↓
+                              Genera BOLETA (8088) automáticamente
 ```
 
 **Descripción:**
-- El usuario realiza una compra
+- El usuario realiza una compra con múltiples productos
 - VENTAS valida que el usuario existe en REGISTRO
-- VENTAS obtiene precio y valida stock en PRODUCTOS
-- Se registra la venta con cálculo automático del total
-- Se genera automáticamente la boleta asociada
+- VENTAS obtiene precio y valida stock para cada producto
+- Se registra la venta principal más los detalles de cada producto
+- Calcula el total sumando todos los subtotales
+- Se genera automáticamente la boleta electrónica asociada
 
 **Endpoint:** `POST /api/ventas/crear`
 
@@ -266,8 +285,18 @@ Cliente → API Gateway (8085) → VENTAS (8087)
 ```json
 {
   "usuarioId": 1,
-  "productoId": 1,
-  "cantidad": 2
+  "metodoPago": "TARJETA_CREDITO",
+  "direccion": "Calle Principal 123",
+  "detalles": [
+    {
+      "productoId": 1,
+      "cantidad": 2
+    },
+    {
+      "productoId": 2,
+      "cantidad": 1
+    }
+  ]
 }
 ```
 
@@ -279,74 +308,100 @@ Cliente → API Gateway (8085) → VENTAS (8087)
   "data": {
     "id": 1,
     "usuarioId": 1,
-    "productoId": 1,
-    "cantidad": 2,
-    "precioUnitario": 89.99,
-    "total": 179.98,
-    "fecha": "2025-11-23T20:30:00",
-    "boletaId": 1,
+    "total": 279.97,
+    "fecha": "2025-11-24T00:30:00",
+    "nombreCliente": "Juan Pérez",
+    "emailCliente": "juan@example.com",
+    "direccion": "Calle Principal 123",
+    "metodoPago": "TARJETA_CREDITO",
     "estado": "COMPLETADA",
-    "usuario": {
-      "id": 1,
-      "nombre": "Juan Pérez",
-      "email": "juan@example.com",
-      "direccion": "Calle Principal 123"
-    },
-    "producto": {
-      "id": 1,
-      "nombre": "Teclado Gamer RGB",
-      "precio": 89.99,
-      "descripcion": "Teclado mecánico con iluminación RGB"
-    }
+    "detalles": [
+      {
+        "id": 1,
+        "productoId": 1,
+        "nombreProducto": "Teclado Gamer RGB",
+        "cantidad": 2,
+        "precioUnitario": 89.99,
+        "subtotal": 179.98
+      },
+      {
+        "id": 2,
+        "productoId": 2,
+        "nombreProducto": "Mouse Gamer",
+        "cantidad": 1,
+        "precioUnitario": 99.99,
+        "subtotal": 99.99
+      }
+    ]
   }
 }
 ```
 
 ---
 
-### 5. **Generación de Boleta (Automática)**
+### 5. **Generación de Boleta Electrónica (Automática)**
 ```
 VENTAS (8087) → BOLETA (8088)
                       ↓
-              Consulta VENTAS (8087)
+              Consulta datos de VENTA
                       ↓
-              Consulta REGISTRO (8084)
+              Genera número de boleta único
+                      ↓
+              Guarda boleta con detalles completos
 ```
 
 **Descripción:**
-- La boleta se genera **automáticamente** al crear una venta
-- BOLETA obtiene información completa de la venta
-- BOLETA obtiene información del usuario desde REGISTRO
-- Se genera el documento con todos los detalles
+- La boleta se genera **automáticamente** al crear una venta exitosa
+- BOLETA obtiene toda la información de la venta (productos, cantidades, precios)
+- Se genera un número de boleta único: `BOL-{timestamp}-{UUID}`
+- Incluye toda la información del cliente y detalles de productos
+- Estado inicial: "EMITIDA"
 
-**Endpoint:** `GET /api/boleta/{id}`
+**Endpoints:**
+- `GET /api/boletas` - Listar todas las boletas
+- `GET /api/boletas/{id}` - Obtener boleta por ID
+- `GET /api/boletas/venta/{ventaId}` - Obtener boleta por ID de venta
+- `POST /api/boletas` - Generar boleta manualmente (opcional)
 
-**Response:**
+**Response (Obtener Boleta):**
 ```json
 {
   "success": true,
   "data": {
     "id": 1,
+    "numero": "BOL-1732410000000-A1B2",
     "ventaId": 1,
     "usuarioId": 1,
-    "fechaEmision": "2025-11-23T20:30:00",
-    "total": 179.98,
+    "fechaEmision": "2025-11-24T00:30:00",
+    "total": 279.97,
+    "nombreCliente": "Juan Pérez",
+    "emailCliente": "juan@example.com",
+    "direccionEnvio": "Calle Principal 123",
+    "metodoPago": "TARJETA_CREDITO",
     "estado": "EMITIDA",
-    "venta": {
-      "id": 1,
-      "cantidad": 2,
-      "precioUnitario": 89.99,
-      "total": 179.98,
-      "fecha": "2025-11-23T20:30:00",
-      "estado": "COMPLETADA"
-    },
-    "usuario": {
-      "id": 1,
-      "nombre": "Juan Pérez",
-      "email": "juan@example.com",
-      "direccion": "Calle Principal 123"
-    }
+    "detalleProductos": "[{\"productoId\":1,\"cantidad\":2,\"precioUnitario\":89.99,\"subtotal\":179.98}]"
   }
+}
+```
+
+**Response (Listar Todas):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "numero": "BOL-1732410000000-A1B2",
+      "ventaId": 1,
+      "usuarioId": 1,
+      "fechaEmision": "2025-11-24T00:30:00",
+      "total": 279.97,
+      "nombreCliente": "Juan Pérez",
+      "emailCliente": "juan@example.com",
+      "estado": "EMITIDA"
+    }
+  ],
+  "total": 1
 }
 ```
 
@@ -366,14 +421,13 @@ VENTAS (8087) → BOLETA (8088)
 
 #### VENTAS (8087)
 - **Consume:** 
-  - REGISTRO (8084) - Validar usuario
-  - PRODUCTOS (8083) - Obtener precio y validar stock
-  - BOLETA (8088) - Generar boleta automáticamente
+  - REGISTRO (8084) - Obtener información completa del usuario
+  - PRODUCTOS (8083) - Obtener precio y validar stock de cada producto
+  - BOLETA (8088) - Generar boleta automáticamente tras completar venta
 
 #### BOLETA (8088)
 - **Consume:**
-  - VENTAS (8087) - Obtener información de venta
-  - REGISTRO (8084) - Obtener información del usuario
+  - VENTAS (8087) - Obtener información completa de la venta y sus detalles
 
 ### Patrón de Comunicación: RestTemplate
 
@@ -395,6 +449,10 @@ public class RestTemplateConfig {
 servicio.productos.url=http://localhost:8083
 servicio.registro.url=http://localhost:8084
 servicio.boleta.url=http://localhost:8088
+
+# Ejemplo en BOLETA
+servicio.ventas.url=http://localhost:8087
+servicio.registro.url=http://localhost:8084
 ```
 
 ---
@@ -402,11 +460,12 @@ servicio.boleta.url=http://localhost:8088
 ## 🛠️ Tecnologías Utilizadas
 
 ### Backend
-- **Spring Boot 3.2.0**: Framework principal
+- **Spring Boot 3.5.7**: Framework principal
 - **Spring Data JPA**: Persistencia de datos
 - **Spring Cloud Gateway**: API Gateway
 - **Hibernate**: ORM
 - **RestTemplate**: Comunicación entre microservicios
+- **Lombok**: Reducción de código boilerplate
 
 ### Base de Datos
 - **MySQL 8.0**: Base de datos relacional
@@ -414,7 +473,6 @@ servicio.boleta.url=http://localhost:8088
 
 ### Documentación
 - **SpringDoc OpenAPI 3 (Swagger)**: Documentación interactiva de APIs
-- **Lombok**: Reducción de código boilerplate
 
 ### Build & Deployment
 - **Maven**: Gestión de dependencias y build
@@ -423,7 +481,7 @@ servicio.boleta.url=http://localhost:8088
 ### Arquitectura
 - **Microservices Pattern**: Arquitectura de microservicios
 - **API Gateway Pattern**: Punto de entrada único
-- **Database per Service Pattern**: Una base de datos compartida con tablas separadas
+- **Database per Service Pattern**: Una base de datos compartida con tablas separadas por servicio
 
 ---
 
@@ -447,8 +505,8 @@ servicio.boleta.url=http://localhost:8088
 
 4. **Crear Base de Datos**
    ```sql
-   CREATE DATABASE IF NOT EXISTS tiendagamer;
-   USE tiendagamer;
+   CREATE DATABASE IF NOT EXISTS tienda_gamer;
+   USE tienda_gamer;
    ```
 
 ### Configuración de Bases de Datos
@@ -456,7 +514,7 @@ servicio.boleta.url=http://localhost:8088
 Cada servicio tiene su `application.properties` configurado:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/tiendagamer
+spring.datasource.url=jdbc:mysql://localhost:3306/tienda_gamer?useSSL=false&serverTimezone=UTC
 spring.datasource.username=root
 spring.datasource.password=
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
@@ -484,7 +542,7 @@ cd registro && mvn clean install && cd ..
 cd tienda && mvn clean install && cd ..
 cd usuarios && mvn clean install && cd ..
 cd ventas && mvn clean install && cd ..
-cd boleta/boleta && mvn clean install && cd ../..
+cd boleta && mvn clean install && cd ..
 ```
 
 ---
@@ -496,12 +554,12 @@ cd boleta/boleta && mvn clean install && cd ../..
 #### 1. **Servicios Base** (iniciar en este orden)
 
 ```bash
-# Terminal 1 - REGISTRO
-cd registro
+# Terminal 1 - USUARIOS (debe iniciar primero)
+cd usuarios
 mvn spring-boot:run
 
-# Terminal 2 - USUARIOS
-cd usuarios
+# Terminal 2 - REGISTRO
+cd registro
 mvn spring-boot:run
 
 # Terminal 3 - PRODUCTOS
@@ -509,27 +567,23 @@ cd productos
 mvn spring-boot:run
 ```
 
-#### 2. **Servicios Dependientes**
+#### 2. **Servicios de Negocio**
 
 ```bash
 # Terminal 4 - INGRESO (depende de USUARIOS)
 cd ingreso
 mvn spring-boot:run
 
-# Terminal 5 - VENTAS (depende de USUARIOS, PRODUCTOS y BOLETA)
+# Terminal 5 - BOLETA (debe iniciar antes que VENTAS)
+cd boleta
+mvn spring-boot:run
+
+# Terminal 6 - VENTAS (depende de USUARIOS, PRODUCTOS y BOLETA)
 cd ventas
 mvn spring-boot:run
 ```
 
-#### 3. **Servicios de Facturación**
-
-```bash
-# Terminal 6 - BOLETA (depende de VENTAS y REGISTRO)
-cd boleta/boleta
-mvn spring-boot:run
-```
-
-#### 4. **API Gateway** (iniciar al final)
+#### 3. **API Gateway** (iniciar al final)
 
 ```bash
 # Terminal 7 - TIENDA (Gateway)
@@ -572,7 +626,7 @@ Cada servicio tiene su propia documentación:
 | `/api/registro/**` | REGISTRO | 8084 | Registro de usuarios |
 | `/api/usuarios/**` | USUARIOS | 8086 | Gestión de credenciales |
 | `/api/ventas/**` | VENTAS | 8087 | Procesamiento de ventas |
-| `/api/boleta/**` | BOLETA | 8088 | Generación de boletas |
+| `/api/boletas/**` | BOLETA | 8088 | Generación y consulta de boletas |
 
 ### Configuración del Gateway
 
@@ -591,7 +645,7 @@ public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
                     .uri("http://localhost:8086"))
             .route("ventas", r -> r.path("/api/ventas/**")
                     .uri("http://localhost:8087"))
-            .route("boleta", r -> r.path("/api/boleta/**")
+            .route("boletas", r -> r.path("/api/boletas/**")
                     .uri("http://localhost:8088"))
             .build();
 }
@@ -650,7 +704,7 @@ Content-Type: application/json
 GET http://localhost:8085/api/productos/listar
 ```
 
-#### 5. Crear Venta (genera boleta automáticamente)
+#### 5. Crear Venta con Carrito Completo (genera boleta automáticamente)
 
 ```bash
 POST http://localhost:8085/api/ventas/crear
@@ -658,27 +712,43 @@ Content-Type: application/json
 
 {
   "usuarioId": 1,
-  "productoId": 1,
-  "cantidad": 2
+  "metodoPago": "TARJETA_CREDITO",
+  "direccion": "Calle Principal 123",
+  "detalles": [
+    {
+      "productoId": 1,
+      "cantidad": 2
+    },
+    {
+      "productoId": 2,
+      "cantidad": 1
+    }
+  ]
 }
 ```
 
-#### 6. Ver Boletas
+#### 6. Listar Todas las Boletas
 
 ```bash
-GET http://localhost:8085/api/boleta/listar
+GET http://localhost:8085/api/boletas
 ```
 
-#### 7. Ver Boleta Específica
+#### 7. Ver Boleta Específica por ID
 
 ```bash
-GET http://localhost:8085/api/boleta/1
+GET http://localhost:8085/api/boletas/1
 ```
 
-#### 8. Ver Boletas por Usuario
+#### 8. Ver Boleta por ID de Venta
 
 ```bash
-GET http://localhost:8085/api/boleta/usuario/1
+GET http://localhost:8085/api/boletas/venta/1
+```
+
+#### 9. Listar Ventas de un Usuario
+
+```bash
+GET http://localhost:8085/api/ventas/usuario/1
 ```
 
 ### Usando Servicios Directamente (Para Testing)
@@ -691,7 +761,9 @@ GET http://localhost:8083/api/productos/listar
 POST http://localhost:8087/api/ventas/crear
 
 # Directamente a BOLETA
-GET http://localhost:8088/api/boleta/listar
+GET http://localhost:8088/api/boletas
+GET http://localhost:8088/api/boletas/1
+GET http://localhost:8088/api/boletas/venta/1
 ```
 
 ---
@@ -701,30 +773,44 @@ GET http://localhost:8088/api/boleta/listar
 ### Dependencias Críticas
 
 - ✅ **MySQL debe estar corriendo** antes de iniciar cualquier servicio
-- ✅ **USUARIOS** debe iniciarse antes que INGRESO y REGISTRO
-- ✅ **PRODUCTOS** debe iniciarse antes que VENTAS
-- ✅ **REGISTRO** debe iniciarse antes que VENTAS y BOLETA
-- ✅ **VENTAS y BOLETA** deben estar corriendo para el flujo completo
+- ✅ **USUARIOS** debe iniciarse primero (puerto 8086)
+- ✅ **REGISTRO** debe iniciarse después de USUARIOS
+- ✅ **PRODUCTOS** debe estar corriendo antes de VENTAS
+- ✅ **BOLETA** debe iniciarse antes de VENTAS
+- ✅ **VENTAS** depende de REGISTRO, PRODUCTOS y BOLETA
 - ✅ **TIENDA (Gateway)** debe iniciarse al final
 
 ### Arquitectura de Datos
 
-📊 **Base de Datos Compartida**: Todos los servicios usan `tiendagamer` pero con tablas separadas
+📊 **Base de Datos Compartida**: Todos los servicios usan `tienda_gamer` pero con tablas separadas
 
 ```
-tiendagamer
-├── registro    (REGISTRO)
-├── usuarios    (USUARIOS)
-├── productos   (PRODUCTOS)
-├── ventas      (VENTAS)
-└── boletas     (BOLETA)
+tienda_gamer
+├── registro           (REGISTRO)
+├── usuarios           (USUARIOS)
+├── productos          (PRODUCTOS)
+├── ventas             (VENTAS)
+├── venta_detalles     (VENTAS - detalles de productos)
+└── boletas            (BOLETA)
 ```
 
 ### Flujo Automático
 
 🔄 **Registro → Usuarios**: Al registrarse, se crea automáticamente el usuario con credenciales
 
-🔄 **Venta → Boleta**: Al crear una venta, se genera automáticamente la boleta asociada
+🔄 **Venta → Boleta**: Al crear una venta, se genera automáticamente la boleta electrónica asociada
+
+🔄 **Venta → Detalles**: Cada venta tiene múltiples detalles (uno por producto en el carrito)
+
+### Características de las Boletas
+
+📄 **Número Único**: Cada boleta tiene un número único formato `BOL-{timestamp}-{UUID}`
+
+💰 **Total Calculado**: El total se calcula sumando todos los subtotales de los productos
+
+📋 **Detalles en JSON**: Los detalles de productos se guardan en formato JSON para facilitar la consulta
+
+👤 **Información Completa**: Incluye datos del cliente, dirección, método de pago y estado
 
 ### Seguridad
 
@@ -732,66 +818,92 @@ tiendagamer
 
 🔐 **Autenticación**: El servicio INGRESO valida credenciales pero no implementa JWT
 
+⚠️ **CORS**: Habilitado para desarrollo (`@CrossOrigin(origins = "*")`)
+
 ### Swagger UI
 
 📖 **Documentación Interactiva**: Cada servicio tiene su propia documentación en `/doc/swagger-ui.html`
 
 🎯 **Testing**: Puedes probar todos los endpoints directamente desde Swagger
 
+### Troubleshooting Común
 
-### Base de datos no encontrada
+#### Base de datos no encontrada
 
 ```sql
 -- Crear base de datos
-CREATE DATABASE IF NOT EXISTS tiendagamer;
+CREATE DATABASE IF NOT EXISTS tienda_gamer;
 
 -- Verificar tablas
-USE tiendagamer;
+USE tienda_gamer;
 SHOW TABLES;
+
+-- Verificar estructura de boletas
+DESCRIBE boletas;
 ```
-### Servicio no responde
+
+#### Servicio no responde
 
 1. Verificar que el servicio esté corriendo
-2. Revisar logs en la consola
+2. Revisar logs en la consola (buscar errores en rojo)
 3. Verificar que el puerto esté libre
 4. Confirmar que las dependencias estén iniciadas
 
-### Gateway no redirige
+#### Gateway no redirige
 
 1. Verificar que TIENDA esté en puerto 8085
 2. Confirmar que todos los servicios estén corriendo
 3. Revisar configuración en `ServicesProperties.java`
 
+#### Campo 'total' no se ve en boletas
+
+1. Verificar que la columna `total` existe en la tabla `boletas`
+2. Revisar logs del servicio BOLETA al generar boletas
+3. Confirmar que `@Column(name = "total")` está en el modelo Boleta
+4. Verificar que se use `setTotal()` y no `setMonto()` en el service
+
 ---
 
-## 📚 Recursos Adicionales
+## 🎯 Modelo de Datos Detallado
 
-### Herramientas Recomendadas
+### Venta
+```java
+{
+  "id": Long,
+  "usuarioId": Long,
+  "total": Double,              // Suma de todos los subtotales
+  "fecha": LocalDateTime,
+  "nombreCliente": String,
+  "emailCliente": String,
+  "direccion": String,
+  "metodoPago": String,         // TARJETA_CREDITO, TRANSFERENCIA, etc.
+  "estado": String,             // COMPLETADA, PENDIENTE, CANCELADA
+  "detalles": [                 // Array de productos
+    {
+      "id": Long,
+      "ventaId": Long,
+      "productoId": Long,
+      "cantidad": Integer,
+      "precioUnitario": Double,
+      "subtotal": Double
+    }
+  ]
+}
+```
 
-- **Postman**: Testing de APIs
-- **Thunder Client**: Extensión de VS Code para testing
-- **HeidiSQL**: Cliente MySQL incluido en Laragon
-- **DBeaver**: Cliente universal de bases de datos
-
-### Extensiones VS Code
-
-- Spring Boot Extension Pack
-- Java Extension Pack
-- REST Client
-- Thunder Client
-
---
-
-## ✨ Características Futuras
-
-- [ ] Implementar JWT para autenticación
-- [ ] Agregar sistema de roles y permisos
-- [ ] Implementar paginación en listados
-- [ ] Agregar filtros y búsqueda avanzada
-- [ ] Agregar logging centralizado
-- [ ] Dockerizar todos los servicios
-- [ ] Implementar CI/CD
-
-**Última actualización**: Noviembre 2025
-**Versión**: 7.7.7
-
+### Boleta
+```java
+{
+  "id": Long,
+  "numero": String,             // BOL-{timestamp}-{UUID}
+  "ventaId": Long,
+  "usuarioId": Long,
+  "fechaEmision": LocalDateTime,
+  "total": Double,              // Copia del total de la venta
+  "nombreCliente": String,
+  "emailCliente": String,
+  "direccionEnvio": String,
+  "metodoPago": String,
+  "estado": String,             // EMITIDA, ANULADA
+  "detalleProductos": String    // JSON con array de productos
+}

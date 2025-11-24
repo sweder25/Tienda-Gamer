@@ -1,7 +1,6 @@
 package com.apiUsuarios.usuarios.controller;
 
 import com.apiUsuarios.usuarios.model.Usuario;
-import com.apiUsuarios.usuarios.model.UsuarioRequest;
 import com.apiUsuarios.usuarios.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,18 +22,69 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
-    @PostMapping("/crear")
-    @Operation(summary = "Crear nuevo usuario")
-    public ResponseEntity<Map<String, Object>> crearUsuario(@RequestBody UsuarioRequest request) {
+    @PostMapping("/login")
+    @Operation(summary = "Validar credenciales de usuario")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> credenciales) {
         Map<String, Object> response = new HashMap<>();
         try {
-            Usuario usuario = usuarioService.crearUsuario(request);
+            System.out.println("=== UsuarioController.login ===");
+            System.out.println("Request body: " + credenciales);
+            
+            String email = credenciales.get("email");
+            String password = credenciales.get("password");
+            
+            System.out.println("Email recibido: " + email);
+            System.out.println("Password recibido: " + (password != null ? "****" : "null"));
+            
+            if (email == null || email.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Email es requerido");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            if (password == null || password.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Password es requerido");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            boolean valido = usuarioService.validarCredenciales(email, password);
+            System.out.println("Resultado validación: " + valido);
+
+            if (valido) {
+                response.put("success", true);
+                response.put("message", "Credenciales válidas");
+                System.out.println("Login exitoso para: " + email);
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Credenciales inválidas");
+                System.out.println("Login fallido para: " + email);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+        } catch (Exception e) {
+            System.err.println("ERROR en login: " + e.getMessage());
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Error al validar credenciales: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PostMapping("/crear")
+    @Operation(summary = "Crear nuevo usuario")
+    public ResponseEntity<Map<String, Object>> crear(@RequestBody Usuario usuario) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            System.out.println("Creando usuario: " + usuario.getEmail());
+            Usuario nuevoUsuario = usuarioService.crear(usuario);
             response.put("success", true);
             response.put("message", "Usuario creado exitosamente");
-            response.put("data", usuario);
+            response.put("data", nuevoUsuario);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-            
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
+            System.err.println("Error al crear usuario: " + e.getMessage());
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
@@ -50,7 +100,6 @@ public class UsuarioController {
             response.put("success", true);
             response.put("data", usuario);
             return ResponseEntity.ok(response);
-            
         } catch (RuntimeException e) {
             response.put("success", false);
             response.put("message", e.getMessage());
@@ -67,7 +116,6 @@ public class UsuarioController {
             response.put("success", true);
             response.put("data", usuario);
             return ResponseEntity.ok(response);
-            
         } catch (RuntimeException e) {
             response.put("success", false);
             response.put("message", e.getMessage());
@@ -86,38 +134,13 @@ public class UsuarioController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/actualizar/{id}")
-    @Operation(summary = "Actualizar usuario")
-    public ResponseEntity<Map<String, Object>> actualizar(@PathVariable Long id, @RequestBody UsuarioRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            Usuario usuario = usuarioService.actualizar(id, request);
-            response.put("success", true);
-            response.put("message", "Usuario actualizado exitosamente");
-            response.put("data", usuario);
-            return ResponseEntity.ok(response);
-            
-        } catch (RuntimeException e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
-    @DeleteMapping("/eliminar/{id}")
-    @Operation(summary = "Eliminar usuario")
-    public ResponseEntity<Map<String, Object>> eliminar(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            usuarioService.eliminar(id);
-            response.put("success", true);
-            response.put("message", "Usuario eliminado exitosamente");
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
+    @GetMapping("/health")
+    @Operation(summary = "Health check")
+    public ResponseEntity<Map<String, String>> healthCheck() {
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "UP");
+        response.put("service", "usuarios-service");
+        response.put("port", "8083");
+        return ResponseEntity.ok(response);
     }
 }

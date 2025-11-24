@@ -4,11 +4,10 @@ import com.apiIngreso.ingreso.dto.LoginRequest;
 import com.apiIngreso.ingreso.dto.LoginResponse;
 import com.apiIngreso.ingreso.dto.UsuarioDTO;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -17,79 +16,84 @@ public class IngresoService {
     @Autowired
     private RestTemplate restTemplate;
 
-    //Value sirve para inyectar valores desde application.properties o variables de entorno
-    @Value("${servicio.usuarios.url:http://localhost:8086}")
-    private String usuariosServiceUrl;
+    private static final String USUARIOS_SERVICE_URL = "http://localhost:8086/api/usuarios";
+    private static final String REGISTRO_SERVICE_URL = "http://localhost:8084/api/registro";
 
-    @Value("${servicio.registro.url:http://localhost:8084}")
-    private String registroServiceUrl;
-
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest loginRequest) {
         try {
-            //Validar que el usuario existe en REGISTRO
-            String registroUrl = registroServiceUrl + "/api/registro/email/" + request.getEmail();
-            Map<String, Object> registroResponse = restTemplate.getForObject(registroUrl, Map.class);
+            // Validar que los campos no estén vacíos
+            if (loginRequest.getEmail() == null || loginRequest.getEmail().isEmpty()) {
+                throw new RuntimeException("El email es requerido");
+            }
+            if (loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty()) {
+                throw new RuntimeException("La contraseña es requerida");
+            }
+
+            // PASO 1: Validar credenciales con el microservicio USUARIOS
+            String urlUsuarios = USUARIOS_SERVICE_URL + "/login";
             
-            if (registroResponse == null || !(Boolean) registroResponse.get("success")) {
-                LoginResponse response = new LoginResponse();
-                response.setSuccess(false);
-                response.setMessage("Usuario no encontrado");
-                return response;
+            // Crear objeto para enviar al microservicio de usuarios
+            Map<String, String> credenciales = Map.of(
+                "email", loginRequest.getEmail(),
+                "password", loginRequest.getPassword()
+            );
+            
+            ResponseEntity<Map> responseUsuarios;
+            try {
+                responseUsuarios = restTemplate.postForEntity(urlUsuarios, credenciales, Map.class);
+            } catch (Exception e) {
+                System.err.println("Error al validar con microservicio USUARIOS: " + e.getMessage());
+                throw new RuntimeException("Credenciales inválidas");
             }
             
-            //Obtener datos del usuario desde REGISTRO
-            Map<String, Object> userData = (Map<String, Object>) registroResponse.get("data");
-            String passwordRegistro = (String) userData.get("password");
+            if (responseUsuarios.getBody() == null || 
+                !(boolean) responseUsuarios.getBody().getOrDefault("success", false)) {
+                throw new RuntimeException("Credenciales inválidas");
+            }
+
+            // PASO 2: Obtener datos completos del usuario desde REGISTRO
+            String urlRegistro = REGISTRO_SERVICE_URL + "/email/" + loginRequest.getEmail();
             
-            //Validar contraseña
-            if (!passwordRegistro.equals(request.getPassword())) {
-                LoginResponse response = new LoginResponse();
-                response.setSuccess(false);
-                response.setMessage("Contraseña incorrecta");
-                return response;
+            ResponseEntity<Map> responseRegistro;
+            try {
+                responseRegistro = restTemplate.getForEntity(urlRegistro, Map.class);
+            } catch (Exception e) {
+                System.err.println("Error al obtener datos del microservicio REGISTRO: " + e.getMessage());
+                throw new RuntimeException("Error al obtener datos del usuario");
             }
             
-            //Guardar/Actualizar credenciales en USUARIOS automáticamente
-            guardarCredencialesEnUsuarios(request.getEmail(), request.getPassword());
+            if (responseRegistro.getBody() == null || 
+                !(boolean) responseRegistro.getBody().get("success")) {
+                throw new RuntimeException("No se encontraron datos del usuario");
+            }
+
+            Map<String, Object> data = (Map<String, Object>) responseRegistro.getBody().get("data");
             
-            //Crear respuesta con datos completos
+            // PASO 3: Crear respuesta exitosa con datos completos
             UsuarioDTO usuario = new UsuarioDTO();
-            usuario.setId(((Number) userData.get("id")).longValue());
-            usuario.setNombre((String) userData.get("nombre"));
-            usuario.setEmail((String) userData.get("email"));
-            usuario.setDireccion((String) userData.get("direccion"));
-            usuario.setRol((String) userData.get("rol"));
-            
-            LoginResponse response = new LoginResponse();
-            response.setSuccess(true);
-            response.setMessage("Login exitoso");
-            response.setUsuario(usuario);
-            return response;
-            
+            usuario.setId(((Number) data.get("id")).longValue());
+            usuario.setNombre((String) data.get("nombre"));
+            usuario.setEmail((String) data.get("email"));
+            usuario.setDireccion((String) data.get("direccion"));
+            usuario.setRol((String) data.get("rol"));
+
+            LoginResponse loginResponse = new LoginResponse();
+            loginResponse.setSuccess(true);
+            loginResponse.setMessage("Login exitoso");
+            loginResponse.setUsuario(usuario);
+
+            return loginResponse;
+
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            LoginResponse response = new LoginResponse();
-            response.setSuccess(false);
-            response.setMessage("Error en el servicio: " + e.getMessage());
-            return response;
+            System.err.println("Error inesperado en login: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al procesar el login. Intenta más tarde.");
         }
     }
-    
-    private void guardarCredencialesEnUsuarios(String email, String password) {
 
-        //Enviar solicitud a USUARIOS para guardar credenciales
-        // Si falla, solo se registra el error en consola pero no afecta el login
-        try {
-            String sincronizarUrl = usuariosServiceUrl + "/api/usuarios/guardar-credenciales";
-            
-            Map<String, String> credenciales = new HashMap<>();
-            credenciales.put("email", email);
-            credenciales.put("password", password);
-            
-            restTemplate.postForObject(sincronizarUrl, credenciales, Map.class);
-            
-            System.out.println("Credenciales guardadas en USUARIOS para: " + email);
-        } catch (Exception e) {
-            System.err.println("Error al guardar credenciales en USUARIOS: " + e.getMessage());
-        }
+    public boolean validarToken(String token) {
+        return token != null && !token.isEmpty();
     }
 }

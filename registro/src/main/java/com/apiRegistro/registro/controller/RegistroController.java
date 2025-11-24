@@ -17,27 +17,25 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/registro")
 @Tag(name = "Registro", description = "API para gestión de registros de usuarios")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5173")
 public class RegistroController {
 
     @Autowired
     private RegistroService registroService;
 
-    @PostMapping("/registrar")
+    @PostMapping
     @Operation(summary = "Registrar nuevo usuario")
-    public ResponseEntity<Map<String, Object>> registrarUsuario(@RequestBody UsuarioRequest request) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<?> registrarUsuario(@RequestBody UsuarioRequest usuarioRequest) {
         try {
-            Registro registro = registroService.registrarUsuario(request);
-            response.put("success", true);
-            response.put("message", "Usuario registrado exitosamente");
-            response.put("data", registro);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-            
-        } catch (RuntimeException e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            System.out.println("Recibiendo registro: " + usuarioRequest.toString()); // Debug
+            Registro nuevoRegistro = registroService.registrarUsuario(usuarioRequest);
+            return ResponseEntity.ok(nuevoRegistro);
+        } catch (Exception e) {
+            System.err.println("Error al registrar: " + e.getMessage()); // Debug
+            e.printStackTrace(); // Para ver el stack trace completo
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Error al registrar usuario: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
 

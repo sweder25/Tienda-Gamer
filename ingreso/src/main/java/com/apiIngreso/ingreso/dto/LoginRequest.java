@@ -1,3 +1,4 @@
+
 package com.apiIngreso.ingreso.dto;
 
 import lombok.AllArgsConstructor;

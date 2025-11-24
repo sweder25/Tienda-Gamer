@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "ventas")
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Venta {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,24 +23,36 @@ public class Venta {
     private Long usuarioId;
     
     @Column(nullable = false)
-    private Long productoId;
-    
-    @Column(nullable = false)
-    private Integer cantidad;
-    
-    @Column(nullable = false)
-    private Double precioUnitario;
-    
-    @Column(nullable = false, name = "precio_total")
     private Double total;
     
-    @Column(nullable = false, name = "fecha_venta")
-    private LocalDateTime fecha;
-    
-    private Long boletaId;
+    @Column(nullable = false)
+    private LocalDateTime fechaVenta;  // CAMBIADO DE 'fecha' A 'fechaVenta'
     
     @Column(nullable = false)
-    private String estado = "COMPLETADA";
-
-
+    private String estado;
+    
+    @Column(nullable = false)
+    private String nombreCliente;
+    
+    @Column
+    private String apellidoCliente;
+    
+    @Column(nullable = false)
+    private String emailCliente;
+    
+    @Column(nullable = false)
+    private String direccion;
+    
+    @Column
+    private String region;
+    
+    @Column
+    private String codigoPostal;
+    
+    @Column(nullable = false)
+    private String metodoPago;
+    
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "venta_id")
+    private List<DetalleVenta> productos;
 }

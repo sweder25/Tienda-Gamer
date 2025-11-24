@@ -4,10 +4,9 @@ import com.apiBoleta.boleta.model.Boleta;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BoletaRepository extends JpaRepository<Boleta, Long> {
-    List<Boleta> findByUsuarioId(Long usuarioId);
-    List<Boleta> findByVentaId(Long ventaId);
+    Optional<Boleta> findByVentaId(Long ventaId);
 }

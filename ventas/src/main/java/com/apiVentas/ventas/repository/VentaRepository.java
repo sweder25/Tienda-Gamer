@@ -9,5 +9,5 @@ import java.util.List;
 @Repository
 public interface VentaRepository extends JpaRepository<Venta, Long> {
     List<Venta> findByUsuarioId(Long usuarioId);
-    List<Venta> findByProductoId(Long productoId);
+    List<Venta> findByEstado(String estado);
 }
