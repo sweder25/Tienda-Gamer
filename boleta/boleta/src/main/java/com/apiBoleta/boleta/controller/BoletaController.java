@@ -96,8 +96,6 @@ public class BoletaController {
             List<Boleta> boletas = boletaService.listarTodas();
             System.out.println("=== GET /api/boletas ===");
             System.out.println("Total boletas encontradas: " + boletas.size());
-            
-            // Verificar que los totales se están enviando
             boletas.forEach(b -> {
                 System.out.println("Boleta " + b.getId() + " - Total: " + b.getTotal());
             });

@@ -134,13 +134,4 @@ public class UsuarioController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/health")
-    @Operation(summary = "Health check")
-    public ResponseEntity<Map<String, String>> healthCheck() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "usuarios-service");
-        response.put("port", "8083");
-        return ResponseEntity.ok(response);
-    }
 }

@@ -9,6 +9,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/tienda")
@@ -19,25 +22,46 @@ public class TiendaController {
     @Autowired
     private RestTemplate restTemplate;
 
-    @GetMapping("/health")
-    @Operation(summary = "Verificar estado del gateway")
+    @GetMapping("usuarios")
+    @Operation(summary = "Obtener información de usuario desde el servicio de usuarios")
+    public ResponseEntity<Map> getUsuarioInfo() {
+        String url = "http://localhost:8086/api/usuarios/listar";
+        ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+        return response;
 
-
-    // Health check simple para el API Gateway
-    // Responde con el estado y URLs de los servicios
-    // Esto ayuda a verificar que el gateway está funcionando y conoce las rutas de los servicios.
-    public ResponseEntity<Map<String, Object>> health() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("message", "Gateway funcionando correctamente");
-        response.put("services", Map.of(
-            "ingreso", "http://localhost:8080",
-            "productos", "http://localhost:8083",
-            "registro", "http://localhost:8084",
-            "usuarios", "http://localhost:8086",
-            "ventas", "http://localhost:8087",
-            "boleta", "http://localhost:8088"
-        ));
-        return ResponseEntity.ok(response);
     }
+
+    @GetMapping("boletas")
+    @Operation(summary = "Obtener todas las boletas desde el servicio de boleta")
+    public ResponseEntity<Map> getBoletaInfo() {
+        String url = "http://localhost:8088/api/boletas";
+        ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+        return response;
+    }
+
+    
+    @GetMapping("registro")
+    @Operation(summary = "Obtener información de registro desde el servicio de registro")
+    public ResponseEntity<Map> getRegistroInfo() {
+        String url = "http://localhost:8084/api/registro/listar";
+        ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+        return response;
+    }
+    
+    @GetMapping("productos")
+    @Operation(summary = "Obtener información de productos desde el servicio de productos")
+    public ResponseEntity<Map> getProductosInfo() {
+        String url = "http://localhost:8083/api/productos";
+        ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+        return response;
+    }
+    
+    @GetMapping("ventas")
+    @Operation(summary = "Obtener información de ventas desde el servicio de ventas")
+    public ResponseEntity<Map> getVentasInfo() {
+        String url = "http://localhost:8087/api/ventas";
+        ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+        return response;
+    }
+    
 }
