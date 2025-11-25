@@ -7,13 +7,11 @@ export const fetchBoletas = async () => {
         console.log('Response boletas COMPLETA:', response);
         console.log('Response boletas DATA:', response.data);
         console.log('Es array?:', Array.isArray(response.data));
-        
-        // Si viene como objeto con propiedad, ajusta aquí
-        // Por ejemplo: return response.data.content || response.data.data || response.data;
+
         return response.data.data;
     } catch (error) {
         console.error('Error fetching boletas:', error);
-        return []; // Retornar array vacío en caso de error
+        return [];
     }
 };
 

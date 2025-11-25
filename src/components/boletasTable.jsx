@@ -18,7 +18,8 @@ const BoletasTable = ({ data }) => {
         <thead>
           <tr className="border-bottom">
             <th className="text-muted fw-normal">ID</th>
-            <th className="text-muted fw-normal">Cliente</th>
+            <th className="text-muted fw-normal">Email Cliente</th>
+            <th className="text-muted fw-normal">Numero Boleta</th>
             <th className="text-muted fw-normal">Fecha</th>
             <th className="text-muted fw-normal text-end">Total</th>
           </tr>
@@ -27,7 +28,8 @@ const BoletasTable = ({ data }) => {
           {boletas.map((boleta) => (
             <tr key={boleta.id} className="border-bottom">
               <td className="text-muted">#{boleta.id}</td>
-              <td>{boleta.nombreCliente || 'N/A'}</td>
+              <td>{boleta.emailCliente}</td>
+              <td>{boleta.numero}</td>
               <td className="text-muted">
                 {boleta.fechaEmision 
                   ? new Date(boleta.fechaEmision).toLocaleDateString('es-ES')

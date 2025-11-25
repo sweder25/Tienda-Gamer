@@ -30,28 +30,17 @@ const Tienda = () => {
                 navigate('/login');
                 return;
             }
-
-            // Obtener registros para verificar el rol
             const registrosData = await fetchRegistros();
-            console.log('Registros data:', registrosData);
-
-            // Buscar el registro del usuario actual
             const registroUsuario = registrosData.find(
                 registro => registro.usuarioId === usuario.id || registro.email === usuario.email
             );
-
-            console.log('Registro usuario:', registroUsuario);
-
-            // Verificar si el usuario tiene rol de ADMIN
             if (!registroUsuario || registroUsuario.rol !== 'ADMIN') {
                 alert('Acceso denegado. Solo administradores pueden acceder.');
                 navigate('/');
                 return;
             }
-
             setIsAdmin(true);
             cargarDatos();
-
         } catch (error) {
             console.error('Error al verificar acceso:', error);
             setError('Error al verificar permisos de acceso.');
@@ -73,13 +62,6 @@ const Tienda = () => {
                 fetchUsuarios(),
                 fetchRegistros()
             ]);
-
-            console.log('Boletas recibidas:', boletasData);
-            console.log('Productos recibidos:', productosData);
-            console.log('Ventas recibidas:', ventasData);
-            console.log('Usuarios recibidos:', usuariosData);
-            console.log('Registros recibidos:', registrosData);
-
             setBoletas(Array.isArray(boletasData) ? boletasData : []);
             setProductos(Array.isArray(productosData) ? productosData : []);
             setVentas(Array.isArray(ventasData) ? ventasData : []);
