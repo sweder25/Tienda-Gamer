@@ -82,7 +82,6 @@ export default function MisBoletas() {
                                             <th>ID</th>
                                             <th>Fecha</th>
                                             <th>Total</th>
-                                            <th>Detalle</th>
                                             <th>Dirección Cliente</th>
                                             <th>Metodo de pago</th>
                                             <th>Codigo</th>
@@ -98,7 +97,6 @@ export default function MisBoletas() {
                                                         ${boleta.total?.toLocaleString("es-CL")}
                                                     </span>
                                                 </td>
-                                                <td>{boleta.detalle}</td>
                                                 <td>{boleta.direccionEnvio}</td>
                                                 <td>{boleta.metodoPago}</td>
                                                 <td>{boleta.numero}</td>
