@@ -39,12 +39,8 @@ public class VentaController {
         try {
             Venta venta = new Venta();
             venta.setUsuarioId(Long.valueOf(requestData.get("usuarioId").toString()));
-            venta.setNombreCliente(requestData.get("nombreCliente").toString());
-            venta.setApellidoCliente(requestData.getOrDefault("apellidoCliente", "").toString());
             venta.setEmailCliente(requestData.get("emailCliente").toString());
             venta.setDireccion(requestData.get("direccion").toString());
-            venta.setRegion(requestData.getOrDefault("region", "").toString());
-            venta.setCodigoPostal(requestData.getOrDefault("codigoPostal", "").toString());
             venta.setMetodoPago(requestData.get("metodoPago").toString());
             
             @SuppressWarnings("unchecked")
@@ -156,11 +152,4 @@ public class VentaController {
         }
     }
 
-    @GetMapping("/api/ventas/health")
-    public ResponseEntity<?> healthCheck() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "ventas-service");
-        return ResponseEntity.ok(response);
-    }
 }

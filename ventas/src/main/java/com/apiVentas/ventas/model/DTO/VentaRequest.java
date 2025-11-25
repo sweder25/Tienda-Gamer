@@ -14,12 +14,8 @@ public class VentaRequest {
     private List<ProductoCarrito> productos;
     
     // Datos de facturación
-    private String nombreCliente;
-    private String apellidoCliente;
     private String emailCliente;
     private String direccion;
-    private String region;
-    private String codigoPostal;
     private String metodoPago;
     
     @Data

@@ -32,22 +32,10 @@ public class Venta {
     private String estado;
     
     @Column(nullable = false)
-    private String nombreCliente;
-    
-    @Column
-    private String apellidoCliente;
-    
-    @Column(nullable = false)
     private String emailCliente;
     
     @Column(nullable = false)
     private String direccion;
-    
-    @Column
-    private String region;
-    
-    @Column
-    private String codigoPostal;
     
     @Column(nullable = false)
     private String metodoPago;
