@@ -33,9 +33,6 @@ public class Boleta {
     @Column(name = "total", nullable = false)
     private Double total;
 
-    @Column(name = "nombre_cliente", nullable = false)
-    private String nombreCliente;
-
     @Column(name = "email_cliente", nullable = false)
     private String emailCliente;
 
@@ -48,6 +45,4 @@ public class Boleta {
     @Column(length = 1000)
     private String estado;
 
-    @Column(name = "detalle_productos", columnDefinition = "TEXT")
-    private String detalleProductos;
 }

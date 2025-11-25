@@ -41,7 +41,6 @@ public class BoletaController {
             System.out.println("ID: " + boleta.getId());
             System.out.println("Número: " + boleta.getNumero());
             System.out.println("Total: " + boleta.getTotal());
-            System.out.println("Cliente: " + boleta.getNombreCliente());
             
             response.put("success", true);
             response.put("message", "Boleta generada exitosamente");

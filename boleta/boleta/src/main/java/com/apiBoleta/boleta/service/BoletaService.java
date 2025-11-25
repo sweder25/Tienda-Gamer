@@ -70,7 +70,6 @@ public class BoletaService {
             boleta.setTotal(total);
             
             // Datos del cliente
-            boleta.setNombreCliente(ventaData.get("nombreCliente").toString());
             boleta.setEmailCliente(ventaData.get("emailCliente").toString());
             
             // Datos adicionales
@@ -89,16 +88,6 @@ public class BoletaService {
                 boleta.setMetodoPago("NO_ESPECIFICADO");
             }
             
-            // Detalle de productos como JSON
-            if (ventaData.containsKey("detalles") && ventaData.get("detalles") != null) {
-                try {
-                    String detalleJson = objectMapper.writeValueAsString(ventaData.get("detalles"));
-                    boleta.setDetalleProductos(detalleJson);
-                    System.out.println("Detalle productos guardado: " + detalleJson);
-                } catch (Exception e) {
-                    System.err.println("Error al serializar productos: " + e.getMessage());
-                }
-            }
             
             System.out.println("Guardando boleta...");
             System.out.println("Boleta antes de guardar - Total: " + boleta.getTotal());
