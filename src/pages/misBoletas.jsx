@@ -83,19 +83,25 @@ export default function MisBoletas() {
                                             <th>Fecha</th>
                                             <th>Total</th>
                                             <th>Detalle</th>
+                                            <th>Dirección Cliente</th>
+                                            <th>Metodo de pago</th>
+                                            <th>Codigo</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {boletas.map(boleta => (
                                             <tr key={boleta.id}>
                                                 <td>{boleta.id}</td>
-                                                <td>{boleta.fecha}</td>
+                                                <td>{boleta.fechaEmision}</td>
                                                 <td>
                                                     <span className="fw-bold text-success">
                                                         ${boleta.total?.toLocaleString("es-CL")}
                                                     </span>
                                                 </td>
                                                 <td>{boleta.detalle}</td>
+                                                <td>{boleta.direccionEnvio}</td>
+                                                <td>{boleta.metodoPago}</td>
+                                                <td>{boleta.numero}</td>
                                             </tr>
                                         ))}
                                     </tbody>

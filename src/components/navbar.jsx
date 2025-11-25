@@ -17,39 +17,70 @@ export default function Navbar() {
                 <Link className="navbar-brand" to="/">
                     <strong>Tienda Gamer</strong>
                 </Link>
-                
-                <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <button
+                    className="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarNav"
+                    aria-controls="navbarNav"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation"
+                >
                     <span className="navbar-toggler-icon"></span>
                 </button>
-                
                 <div className="collapse navbar-collapse" id="navbarNav">
-                    <ul className="navbar-nav ml-auto">
+                    <ul className="navbar-nav me-auto mb-2 mb-lg-0">
                         <li className="nav-item">
                             <Link className="nav-link" to="/">Inicio</Link>
                         </li>
+                        {usuario?.rol === 'ADMIN' && (
+                            <li className="nav-item">
+                                <Link className="nav-link" to="/tienda">Tienda</Link>
+                            </li>
+                        )}
                         <li className="nav-item">
                             <Link className="nav-link" to="/catalogo">Catálogo</Link>
+                        </li>
+                        <li className="nav-item">
+                            <Link className="nav-link" to="/boleta">
+                                <i className="bi bi-receipt"></i> Mis Boletas
+                            </Link>
                         </li>
                         <li className="nav-item">
                             <Link className="nav-link" to="/carrito">
                                 <i className="bi bi-cart"></i> Carrito
                             </Link>
                         </li>
-                        
+                    </ul>
+                    <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
                         {isAuthenticated ? (
                             <>
-                                <li className="nav-item">
-                                    <span className="nav-link text-light">
+                                <li className="nav-item dropdown d-flex align-items-center">
+                                    <span
+                                        className="nav-link dropdown-toggle text-light"
+                                        id="usuarioDropdown"
+                                        role="button"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false"
+                                        style={{ cursor: 'pointer' }}
+                                    >
                                         <i className="bi bi-person-circle"></i> {usuario?.nombre}
                                     </span>
-                                </li>
-                                <li className="nav-item">
-                                    <button 
-                                        className="nav-link btn btn-link" 
-                                        onClick={handleLogout}
-                                    >
-                                        Cerrar Sesión
-                                    </button>
+                                    <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="usuarioDropdown">
+                                        <li>
+                                            <Link className="dropdown-item" to="/boleta">
+                                                <i className="bi bi-receipt"></i> Mis Boletas
+                                            </Link>
+                                        </li>
+                                        <li>
+                                            <button
+                                                className="dropdown-item"
+                                                onClick={handleLogout}
+                                            >
+                                                Cerrar Sesión
+                                            </button>
+                                        </li>
+                                    </ul>
                                 </li>
                             </>
                         ) : (
@@ -67,4 +98,4 @@ export default function Navbar() {
             </div>
         </nav>
     );
-}
+}   
