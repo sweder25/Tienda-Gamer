@@ -15,16 +15,12 @@ public class UsuarioService {
     private UsuarioRepository usuarioRepository;
 
     public boolean validarCredenciales(String email, String password) {
-        System.out.println("=== UsuarioService.validarCredenciales ===");
-        System.out.println("Email: " + email);
-        
         Usuario usuario = usuarioRepository.findByEmail(email);
         
         if (usuario == null) {
             System.out.println("Usuario no encontrado en BD");
             return false;
         }
-        
         System.out.println("Usuario encontrado ID: " + usuario.getId());
         System.out.println("Comparando passwords...");
         boolean valido = usuario.getPassword().equals(password);

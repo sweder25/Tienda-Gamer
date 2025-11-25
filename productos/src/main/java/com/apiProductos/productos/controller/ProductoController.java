@@ -2,6 +2,9 @@ package com.apiProductos.productos.controller;
 
 import com.apiProductos.productos.model.Producto;
 import com.apiProductos.productos.services.ProductoService;
+
+import io.swagger.v3.oas.annotations.Operation;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,38 +42,20 @@ public class ProductoController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Obtener producto por ID" , description = "Obtiene un producto específico usando su ID"    )
     public ResponseEntity<Map<String, Object>> obtenerPorId(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
-        try {
-            System.out.println("GET /api/productos/" + id);
-            Producto producto = productoService.obtenerPorId(id);
-            response.put("success", true);
-            response.put("data", producto);
-            System.out.println("Producto encontrado: " + producto.getNombre());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            response.put("success", false);
-            response.put("message", "Producto no encontrado");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
-    }
+    
 
     @PostMapping
+    @Operation(summary = "Crear un nuevo producto", description = "Crea un nuevo producto en el sistema")
     public ResponseEntity<Map<String, Object>> crear(@RequestBody Producto producto) {
         Map<String, Object> response = new HashMap<>();
-        try {
-            Producto nuevoProducto = productoService.crear(producto);
-            response.put("success", true);
-            response.put("message", "Producto creado");
-            response.put("data", nuevoProducto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
-    }
+    
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> actualizar(@PathVariable Long id, @RequestBody Producto producto) {
@@ -103,11 +88,4 @@ public class ProductoController {
         }
     }
 
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> healthCheck() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "productos-service");
-        return ResponseEntity.ok(response);
-    }
 }

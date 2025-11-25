@@ -18,13 +18,15 @@ import java.util.UUID;
 public class BoletaService {
 
     @Autowired
+    private ObjectMapper objectMapper;
+    
+    @Autowired
     private BoletaRepository boletaRepository;
 
     @Autowired
     private RestTemplate restTemplate;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+
 
     private static final String VENTAS_URL = "http://localhost:8087/api/ventas";
 
