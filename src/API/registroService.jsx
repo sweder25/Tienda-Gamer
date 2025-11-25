@@ -3,7 +3,7 @@ const API_URL = 'http://localhost:8084/api/registro';
 export const registroService = {
   registrarUsuario: async (datosUsuario) => {
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(`${API_URL}/registrar`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
