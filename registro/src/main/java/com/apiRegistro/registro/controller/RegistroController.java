@@ -23,7 +23,7 @@ public class RegistroController {
     @Autowired
     private RegistroService registroService;
 
-    @PostMapping
+    @PostMapping("/registrar")
     @Operation(summary = "Registrar nuevo usuario")
     public ResponseEntity<?> registrarUsuario(@RequestBody UsuarioRequest usuarioRequest) {
         try {

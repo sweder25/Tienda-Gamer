@@ -43,16 +43,36 @@ public class ProductoController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener producto por ID" , description = "Obtiene un producto específico usando su ID"    )
-    public ResponseEntity<Map<String, Object>> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> obtenerProductoPorId(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        try {
+            Producto producto = productoService.obtenerProductoPorId(id);
+            response.put("success", true);
+            response.put("data", producto);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+
         }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
     
 
     @PostMapping
     @Operation(summary = "Crear un nuevo producto", description = "Crea un nuevo producto en el sistema")
     public ResponseEntity<Map<String, Object>> crear(@RequestBody Producto producto) {
         Map<String, Object> response = new HashMap<>();
+        try {
+            Producto creado = productoService.crear(producto);
+            response.put("success", true);
+            response.put("message", "Producto creado");
+            response.put("data", creado);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        }
             return ResponseEntity.badRequest().body(response);
         }
     

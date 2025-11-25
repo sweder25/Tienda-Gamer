@@ -14,21 +14,14 @@ public class ProductoService {
     @Autowired
     private ProductoRepository productoRepository;
 
-    public Producto obtenerPorId(Long id) {
-        Optional<Producto> producto = productoRepository.findById(id);
-        if (producto.isPresent()) {
-            return producto.get();
-        } else {
-            throw new RuntimeException("Producto no encontrado con ID: " + id);
-        }
-    }
+public Producto obtenerProductoPorId(Long id) {
+    return productoRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id)); 
+
+}
 
     public List<Producto> listarTodos() {
         return productoRepository.findAll();
-    }
-
-    public List<Producto> listarPorCategoria(String categoria) {
-        return productoRepository.findByCategoria(categoria);
     }
 
     public Producto crear(Producto producto) {
@@ -36,7 +29,7 @@ public class ProductoService {
     }
 
     public Producto actualizar(Long id, Producto producto) {
-        Producto existente = obtenerPorId(id);
+        Producto existente = obtenerProductoPorId(id);
         
         if (producto.getNombre() != null) {
             existente.setNombre(producto.getNombre());
@@ -58,7 +51,7 @@ public class ProductoService {
     }
 
     public Producto actualizarStock(Long id, Integer nuevoStock) {
-        Producto producto = obtenerPorId(id);
+        Producto producto = obtenerProductoPorId(id);
         
         if (nuevoStock < 0) {
             throw new RuntimeException("El stock no puede ser negativo");
@@ -69,7 +62,7 @@ public class ProductoService {
     }
 
     public void eliminar(Long id) {
-        Producto producto = obtenerPorId(id);
+        Producto producto = obtenerProductoPorId(id);
         productoRepository.delete(producto);
     }
 }
