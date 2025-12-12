@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ingresoService } from '../API/IngresoService';
 
 const AuthContext = createContext();
@@ -14,6 +15,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [usuario, setUsuario] = useState(null);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const usuarioGuardado = ingresoService.obtenerUsuarioActual();
@@ -36,6 +38,7 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         ingresoService.logout();
         setUsuario(null);
+        navigate('/inicio', { replace: true });
     };
 
     const value = {

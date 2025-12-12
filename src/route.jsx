@@ -1,4 +1,5 @@
-import {Routes, Route} from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 
 import Home from './pages/home';
 import Catalogo from './pages/catalogo';
@@ -18,10 +19,17 @@ export default function AppRoutes(){
             <Route path='/carrito' element ={<Carrito />} />
             <Route path='/inicio' element ={<Inicio />} />
             <Route path='/registro' element ={<Registro />} />
-            <Route path='/boleta' element ={<MisBoletas />} />
+            <Route path='/boleta' element ={<ProtectedRoute><MisBoletas /></ProtectedRoute>} />
             <Route path='/tienda' element ={<Tienda />} />
-            <Route path="/boleta/:ventaId" element={<Boleta />} />
+            <Route path="/boleta/:ventaId" element={<ProtectedRoute><Boleta /></ProtectedRoute>} />
         </Routes>
     )
+}
+
+function ProtectedRoute({ children }){
+    const { isAuthenticated, loading } = useAuth();
+    if (loading) return null;
+    if (!isAuthenticated) return <Navigate to="/inicio" replace />;
+    return children;
 }
 
