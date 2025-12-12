@@ -3,6 +3,7 @@ package com.apiIngreso.ingreso.service;
 import com.apiIngreso.ingreso.config.JwtUtil;
 import com.apiIngreso.ingreso.dto.LoginRequest;
 import com.apiIngreso.ingreso.dto.LoginResponse;
+import com.apiIngreso.ingreso.dto.UsuarioDTO;
 import com.apiIngreso.ingreso.model.Usuario;
 import com.apiIngreso.ingreso.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,16 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(usuario.getEmail());
 
-        return new LoginResponse(token, usuario.getEmail());
+        // Crear UsuarioDTO desde Usuario
+        UsuarioDTO usuarioDTO = new UsuarioDTO(
+            usuario.getId(),
+            usuario.getNombre(),
+            usuario.getEmail(),
+            null, // direccion no existe en Usuario, usar null
+            usuario.getRol()
+        );
+
+        return new LoginResponse(token, usuarioDTO);
     }
 
     public Usuario register(Usuario usuario) {
