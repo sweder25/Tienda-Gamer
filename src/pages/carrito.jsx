@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCarrito } from '../context/CarritoContext';
 import { useAuth } from '../context/AuthContext';
 import { ventaService } from '../API/ventaService';
+import { getImageForProduct } from '../assets/imagesMap';
 
 export default function Carrito() {
   const navigate = useNavigate();
@@ -98,16 +99,22 @@ export default function Carrito() {
                 <li key={producto.id} className="list-group-item">
                   <div className="row align-items-center">
                     <div className="col-md-2 text-center">
-                      <div 
-                        className="bg-gradient d-flex align-items-center justify-content-center"
-                        style={{ 
-                          height: "80px", 
-                          borderRadius: "8px",
-                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                        }}
-                      >
-                        <i className="bi bi-controller text-white" style={{ fontSize: "2rem" }}></i>
-                      </div>
+                      <div className="col-md-2 text-center">
+              <img
+                src={getImageForProduct(producto) || '/images/placeholder.png'}
+                alt={producto.nombre}
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb'
+                }}
+                onError={(e) => {
+                  e.currentTarget.src = 'https://via.placeholder.com/80x80?text=IMG';
+                }}
+              />
+                </div>
                     </div>
                     
                     <div className="col-md-4">

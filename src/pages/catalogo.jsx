@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { productoService } from '../API/productoService';
 import { useCarrito } from '../context/CarritoContext';
+import { getImageForProduct } from '../assets/imagesMap';
 
 export default function Catalogo() {
   const { agregarAlCarrito } = useCarrito();
@@ -48,12 +49,15 @@ export default function Catalogo() {
                   key={producto.id}
                   className="list-group-item list-group-item-action d-flex align-items-center py-3"
                 >
-                  {/* Mini header con logo */}
-                  <div className="me-3 p-3 rounded" style={{ background: '#f1f3f5' }}>
+                  {/* Mini imagen del producto */}
+                  <div className="me-3 p-2 rounded d-flex align-items-center justify-content-center" style={{ background: '#f1f3f5', width: '80px', height: '80px' }}>
                     <img
-                      src="/logo.png"
-                      alt="Logo"
-                      style={{ width: '55px', height: 'auto' }}
+                      src={getImageForProduct(producto)}
+                      alt={producto.nombre}
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/80x80?text=IMG';
+                      }}
+                      style={{ maxWidth: '76px', maxHeight: '76px', objectFit: 'cover', borderRadius: '8px' }}
                     />
                   </div>
 

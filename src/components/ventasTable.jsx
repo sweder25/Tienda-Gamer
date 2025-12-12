@@ -17,7 +17,7 @@ const VentasTable = ({ data }) => {
         <thead>
           <tr className="border-bottom">
             <th className="text-muted fw-normal">ID</th>
-            <th className="text-muted fw-normal">Cliente</th>
+            <th className="text-muted fw-normal"></th> 
             <th className="text-muted fw-normal">Email</th>
             <th className="text-muted fw-normal">Fecha</th>
             <th className="text-muted fw-normal text-center">Productos</th>
@@ -30,7 +30,7 @@ const VentasTable = ({ data }) => {
           {ventas.map((venta) => (
             <tr key={venta.id} className="border-bottom">
               <td className="text-muted">#{venta.id}</td>
-              <td>{venta.nombreCliente} {venta.apellidoCliente}</td>
+              <td>{venta.nombreCliente}</td>
               <td className="text-muted small">{venta.emailCliente || 'N/A'}</td>
               <td className="text-muted">
                 {venta.fechaVenta 

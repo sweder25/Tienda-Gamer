@@ -1,4 +1,4 @@
-name: Python CI/CD Pipeline
+name: CI/CD - Spring Boot + React (Render)
 
 on:
   push:
@@ -9,49 +9,71 @@ on:
     branches:
       - main
 
+env:
+  # 🔐 Variables globales para Render
+  RENDER_BACKEND_DEPLOY_HOOK:  ${{ 611287ae15aca5c05a369d29cc9b8573 }}
+  RENDER_FRONTEND_DEPLOY_HOOK: ${{ c31d88cf05f6924f0010243a8808f81b }}
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout del repositorio
+
+      # 1️⃣ Descargar el repositorio
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Configuración de Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      # ============================
+      # 🅱 BACKEND (Spring Boot)
+      # ============================
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          python-version: '3.11'
+          java-version: '17'
+          distribution: 'temurin'
 
-      # 3️⃣ Instalación de dependencias
-      - name: Install dependencies
+      - name: Build Backend
         run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          cd Tienda-Gamer_back
+          mvn clean install -DskipTests=false
 
-      # 4️⃣ Ejecución de tests unitarios
-      - name: Run tests
+      # ============================
+      # 🎨 FRONTEND (React)
+      # ============================
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Build Frontend
         run: |
-          if [ -d tests ]; then
-            pytest tests/
-          else
-            echo "No hay tests definidos, omitiendo."
-          fi
+          cd TIENDA_GAMER_FRONT
+          npm install
+          npm run build
 
-      # 5️⃣ Build / Preparar para despliegue
-      - name: Build project
+      # ============================
+      # 🚀 DESPLIEGUE A RENDER
+      # ============================
+
+      - name: Deploy Backend to Render
+        if: github.ref == 'refs/heads/main'
         run: |
-          echo "Aquí se puede agregar el build o compilación del proyecto"
-          # Por ejemplo, para PyInstaller:
-          # pyinstaller --onefile src/app.py
+          echo "Desplegando backend..."
+          curl -X POST "$RENDER_BACKEND_DEPLOY_HOOK"
 
-      # 6️⃣ Despliegue (opcional, ejemplo Heroku o servidor)
-      - name: Deploy
+      - name: Deploy Frontend to Render
+        if: github.ref == 'refs/heads/main'
         run: |
-          echo "Agrega aquí comandos de despliegue (Heroku, Netlify, servidor propio, etc.)"
+          echo "Desplegando frontend..."
+          curl -X POST "$RENDER_FRONTEND_DEPLOY_HOOK"
 
-      # 7️⃣ Notificación
+      # ============================
+      # 🔔 Notificación
+      # ============================
+
       - name: Notify
         run: |
-          echo "Pipeline completado. Resultado: $GITHUB_WORKFLOW"
+          echo "Pipeline completado correctamente 🚀"

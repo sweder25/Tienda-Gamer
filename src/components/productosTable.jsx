@@ -20,7 +20,6 @@ const ProductosTable = ({ data }) => {
             <th className="text-muted fw-normal">Nombre</th>
             <th className="text-muted fw-normal">Categoría</th>
             <th className="text-muted fw-normal text-end">Precio</th>
-            <th className="text-muted fw-normal text-center">Stock</th>
           </tr>
         </thead>
         <tbody>
