@@ -1,5 +1,35 @@
 import axios from 'axios';
+import { authUtils } from '../utils/authUtils';
+
 const API_BASE_URL = 'http://localhost:8085/api/tienda';
+
+// Configurar interceptor para agregar JWT automáticamente
+axios.interceptors.request.use(
+    (config) => {
+        const token = authUtils.getToken();
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Interceptor para manejar errores de autenticación
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            // Token inválido o expirado
+            console.error('Token inválido o expirado');
+            authUtils.clearAuth();
+            window.location.href = '/inicio';
+        }
+        return Promise.reject(error);
+    }
+);
 
 export const fetchBoletas = async () => {
     try {

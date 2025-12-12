@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { registroService } from '../API/registroService';
+import { useAuth } from '../context/AuthContext';
 
 export default function Registro() {
     const navigate = useNavigate();
+    const { register } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
@@ -63,7 +64,7 @@ export default function Registro() {
         setLoading(true);
 
         try {
-            // Preparar datos según el modelo Registro.java
+            // Preparar datos según el modelo Usuario.java del backend
             const datosRegistro = {
                 nombre: formData.nombre.trim(),
                 email: formData.email.toLowerCase().trim(),
@@ -72,11 +73,16 @@ export default function Registro() {
                 rol: 'USER' // Valor por defecto
             };
 
-            const response = await registroService.registrarUsuario(datosRegistro);
+            const response = await register(datosRegistro);
             
-            // Registro exitoso
-            alert('¡Registro exitoso! Ahora puedes iniciar sesión.');
-            navigate('/inicio');
+            // Registro exitoso - si el backend devuelve token, ya está autenticado
+            if (response.token) {
+                alert(`¡Registro exitoso! Bienvenido ${response.usuario.nombre}!`);
+                navigate('/'); // Ir al home ya autenticado
+            } else {
+                alert('¡Registro exitoso! Ahora puedes iniciar sesión.');
+                navigate('/inicio');
+            }
             
         } catch (error) {
             setError(error.message || 'Error al registrar. Intenta nuevamente.');

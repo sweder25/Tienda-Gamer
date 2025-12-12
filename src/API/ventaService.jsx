@@ -1,3 +1,5 @@
+import { authUtils } from '../utils/authUtils';
+
 const API_URL = 'http://localhost:8087/api/ventas';
 
 export const ventaService = {
@@ -11,7 +13,7 @@ export const ventaService = {
         method: 'POST',
         mode: 'cors',
         headers: {
-          'Content-Type': 'application/json',
+          ...authUtils.getAuthHeaders(),
           'Accept': 'application/json'
         },
         body: JSON.stringify(ventaData)
@@ -51,7 +53,9 @@ export const ventaService = {
 
   obtenerVentasPorUsuario: async (usuarioId) => {
     try {
-      const response = await fetch(`${API_URL}/usuario/${usuarioId}`);
+      const response = await fetch(`${API_URL}/usuario/${usuarioId}`, {
+        headers: authUtils.getAuthHeaders()
+      });
       if (!response.ok) throw new Error(`Error ${response.status}`);
       const data = await response.json();
       return data.data || [];
@@ -63,7 +67,9 @@ export const ventaService = {
 
   obtenerVentaPorId: async (id) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`);
+      const response = await fetch(`${API_URL}/${id}`, {
+        headers: authUtils.getAuthHeaders()
+      });
       if (!response.ok) throw new Error(`Error ${response.status}`);
       const data = await response.json();
       return data.data;

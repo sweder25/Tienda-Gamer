@@ -1,3 +1,5 @@
+import { authUtils } from '../utils/authUtils';
+
 const API_URL = 'http://localhost:8084/api/registro';
 
 export const registroService = {
@@ -5,9 +7,7 @@ export const registroService = {
     try {
       const response = await fetch(`${API_URL}/registrar`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
+        headers: authUtils.getAuthHeaders(),
         body: JSON.stringify(datosUsuario)
       });
       
@@ -25,7 +25,9 @@ export const registroService = {
 
   verificarRut: async (rut) => {
     try {
-      const response = await fetch(`${API_URL}/verificar/${rut}`);
+      const response = await fetch(`${API_URL}/verificar/${rut}`, {
+        headers: authUtils.getAuthHeaders()
+      });
       if (!response.ok) throw new Error('Error al verificar RUT');
       return await response.json();
     } catch (error) {

@@ -1,9 +1,13 @@
+import { authUtils } from '../utils/authUtils';
+
 const API_URL = 'http://localhost:8088/api/boletas';
 
 export const boletaService = {
   obtenerTodas: async () => {
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(API_URL, {
+        headers: authUtils.getAuthHeaders()
+      });
       if (!response.ok) throw new Error('Error al obtener boletas');
       const data = await response.json();
       return data.data || [];
@@ -15,7 +19,9 @@ export const boletaService = {
 
   obtenerPorId: async (id) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`);
+      const response = await fetch(`${API_URL}/${id}`, {
+        headers: authUtils.getAuthHeaders()
+      });
       if (!response.ok) throw new Error('Boleta no encontrada');
       const data = await response.json();
       return data.data;
@@ -27,7 +33,9 @@ export const boletaService = {
 
   obtenerPorVentaId: async (ventaId) => {
     try {
-      const response = await fetch(`${API_URL}/venta/${ventaId}`);
+      const response = await fetch(`${API_URL}/venta/${ventaId}`, {
+        headers: authUtils.getAuthHeaders()
+      });
       if (!response.ok) throw new Error('Boleta no encontrada');
       const data = await response.json();
       return data.data;
@@ -41,7 +49,7 @@ export const boletaService = {
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authUtils.getAuthHeaders(),
         body: JSON.stringify({ ventaId })
       });
       if (!response.ok) throw new Error('Error al generar boleta');

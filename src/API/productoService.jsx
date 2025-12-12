@@ -1,9 +1,13 @@
+import { authUtils } from '../utils/authUtils';
+
 const API_URL = 'http://localhost:8083/api/productos';
 
 export const productoService = {
   obtenerTodos: async () => {
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch(API_URL, {
+        headers: authUtils.getAuthHeaders()
+      });
       if (!response.ok) throw new Error('Error al obtener productos');
       const data = await response.json();
       return data.data || [];
@@ -15,7 +19,9 @@ export const productoService = {
 
   obtenerPorId: async (id) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`);
+      const response = await fetch(`${API_URL}/${id}`, {
+        headers: authUtils.getAuthHeaders()
+      });
       if (!response.ok) throw new Error('Producto no encontrado');
       const data = await response.json();
       return data.data;
@@ -29,7 +35,7 @@ export const productoService = {
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authUtils.getAuthHeaders(),
         body: JSON.stringify(producto)
       });
       if (!response.ok) throw new Error('Error al crear producto');
@@ -45,7 +51,7 @@ export const productoService = {
     try {
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authUtils.getAuthHeaders(),
         body: JSON.stringify(producto)
       });
       if (!response.ok) throw new Error('Error al actualizar producto');
@@ -60,7 +66,8 @@ export const productoService = {
   eliminar: async (id) => {
     try {
       const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: authUtils.getAuthHeaders()
       });
       if (!response.ok) throw new Error('Error al eliminar producto');
       return true;
