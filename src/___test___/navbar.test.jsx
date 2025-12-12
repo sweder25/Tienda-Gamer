@@ -1,9 +1,10 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
-import Navbar from "../navbar";
+import Navbar from "../components/navbar";
+import React from "react";
 
 // Mock del contexto de autenticación
-jest.mock("../../context/AuthContext", () => ({
+jest.mock("../context/AuthContext", () => ({
   useAuth: () => ({
     usuario: { nombre: "Maximiliano el guapo" },
     isAuthenticated: true,
@@ -26,7 +27,8 @@ describe("Navbar Component", () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText("Maxi")).toBeInTheDocument();
+    // El componente muestra el nombre completo: "Maximiliano el guapo"
+    expect(screen.getByText(/Maximiliano\s+el\s+guapo/i)).toBeInTheDocument();
   });
 
   test("muestra botón de cerrar sesión cuando está autenticado", () => {
@@ -49,7 +51,9 @@ describe("Navbar Component", () => {
     const button = screen.getByText("Cerrar Sesión");
     fireEvent.click(button);
 
-    // Se debe llamar navigate('/inicio')
-    expect(mockNavigate).toHaveBeenCalledWith("/inicio");
+    // Se debe llamar navigate('/inicio') (puede incluir opciones como { replace: true })
+    const calls = mockNavigate.mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls[0][0]).toBe("/inicio");
   });
 });

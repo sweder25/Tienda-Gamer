@@ -50,17 +50,16 @@ export default function Catalogo() {
                   className="list-group-item list-group-item-action d-flex align-items-center py-3"
                 >
                   {/* Mini imagen del producto */}
-                  <div className="me-3 p-2 rounded d-flex align-items-center justify-content-center" style={{ background: '#f1f3f5', width: '80px', height: '80px' }}>
+                  <div className="me-3 p-2 rounded d-flex align-items-center justify-content-center" style={{ background: '#ffffffff', width: '80px', height: '80px' }}>
                     <img
                       src={getImageForProduct(producto)}
                       alt={producto.nombre}
                       onError={(e) => {
                         e.currentTarget.src = 'https://via.placeholder.com/80x80?text=IMG';
                       }}
-                      style={{ maxWidth: '76px', maxHeight: '76px', objectFit: 'cover', borderRadius: '8px' }}
+                      style={{ maxWidth: '120px', maxHeight: '120px', objectFit: 'cover', borderRadius: '20px' }}
                     />
                   </div>
-
                   {/* Contenido */}
                   <div className="flex-grow-1">
                     <h5 className="mb-1 fw-bold">{producto.nombre}</h5>

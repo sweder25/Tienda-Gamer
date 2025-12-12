@@ -79,17 +79,17 @@ export default function MisBoletas() {
                                 <table className="table table-striped align-middle">
                                     <thead>
                                         <tr>
-                                            <th>ID</th>
                                             <th>Fecha</th>
+                                            <th>Cliente (Email)</th>
                                             <th>Total</th>
-                                            <th>Detalle</th>
+                                            
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {boletas.map(boleta => (
                                             <tr key={boleta.id}>
-                                                <td>{boleta.id}</td>
-                                                <td>{boleta.fecha}</td>
+                                                <td>{boleta.fechaEmision}</td>
+                                                <td>{boleta.emailCliente}</td>
                                                 <td>
                                                     <span className="fw-bold text-success">
                                                         ${boleta.total?.toLocaleString("es-CL")}

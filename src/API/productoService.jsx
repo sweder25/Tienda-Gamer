@@ -1,6 +1,10 @@
 const API_URL = 'http://localhost:8083/api/productos';
 
+
+
 export const productoService = {
+
+  
   obtenerTodos: async () => {
     try {
       const response = await fetch(API_URL);

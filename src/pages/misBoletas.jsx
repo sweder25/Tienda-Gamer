@@ -90,7 +90,6 @@ export default function MisBoletas() {
                                     <tbody>
                                         {boletas.map(boleta => (
                                             <tr key={boleta.id}>
-                                                <td>{boleta.id}</td>
                                                 <td>{boleta.fechaEmision}</td>
                                                 <td>
                                                     <span className="fw-bold text-success">

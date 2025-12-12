@@ -7,10 +7,6 @@ export const productImages = {
 
 export function getImageForProduct(product) {
   if (!product) return undefined;
-  // Prefer explicit URL fields from backend
-  if (product.imagenUrl) return product.imagenUrl;
-  if (product.imagen && typeof product.imagen === 'string' && product.imagen.startsWith('http')) return product.imagen;
-
   const slug = (product.nombre || '').toLowerCase().trim().replace(/\s+/g, '-');
   // Try id mapping
   if (product.id && productImages[product.id]) return productImages[product.id];
